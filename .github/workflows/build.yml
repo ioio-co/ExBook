@@ -1,0 +1,23 @@
+name: build
+
+on:
+  push:
+    paths-ignore: ['**.md', 'README.IMAGE/**']
+  pull_request:
+    paths-ignore: ['**.md', 'README.IMAGE/**']
+
+jobs:
+  compile-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install TeX Live
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            texlive-xetex texlive-lang-chinese texlive-latex-extra \
+            texlive-fonts-recommended texlive-fonts-extra tex-gyre
+
+      - name: Compile all format/option combinations
+        run: tests/compile-matrix.sh

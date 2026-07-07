@@ -75,7 +75,7 @@ LaTeX 内核已内置键值支持（`\DeclareKeys`/l3keys），可去掉 xkeyval
 
 ## 四、健壮性
 
-### 🟡 12. `\setmainfont{Times New Roman}` 硬编码
+### ~~🟡 12. `\setmainfont{Times New Roman}` 硬编码~~（已修复，回退 TeX Gyre Termes）
 Linux 及部分精简 TeX 环境没有该字体，编译直接失败（本次重构在容器里
 就需要手工造一份同名字体才能编译）。建议：
 ```latex
@@ -100,17 +100,16 @@ Linux 及部分精简 TeX 环境没有该字体，编译直接失败（本次重
 
 ## 五、仓库工程化
 
-### 🟡 16. 缺少 .gitignore，编译产物入库
-`.DS_Store`、`*.synctex.gz`、约 3.8MB 的示例 PDF 都在版本库里。
-建议添加 .gitignore（`*.aux *.log *.out *.toc *.synctex.gz .DS_Store` 等），
-示例 PDF 移到 GitHub Releases 或文档站。
+### ~~🟡 16. 缺少 .gitignore，编译产物入库~~（已部分处理）
+已添加 .gitignore 并移除 `.DS_Store`、`*.synctex.gz`。
+**遗留**：两个示例 PDF（约 3.8MB）仍在库中，且内容已过时
+（不含 `\textwater` 修复后的第 5 题选项）——建议作者用自己机器的
+真实字体重新生成，或移到 GitHub Releases。
 
-### 🟡 17. 没有任何自动化测试
-本次重构使用的验证手段可以直接沉淀进仓库：
-- 编译矩阵：6 版式 × 深色/打印/水印/在线勘误等开关，共 15 种组合；
-- 逐像素回归：pdftoppm 渲染 + 与基线图像对比。
-配一个 GitHub Actions workflow（texlive 容器）即可在每次 push 时自动
-把关，杜绝再次出现 `\sixchoices` 那类“复制粘贴改坏了没人发现”的问题。
+### ~~🟡 17. 没有任何自动化测试~~（已完成）
+- `tests/compile-matrix.sh`：15 种版式/选项组合编译矩阵（`--render` 可输出 PNG）；
+- `tests/compare.py`：两个版本渲染结果的逐像素对比，用法见 `tests/README.md`；
+- `.github/workflows/build.yml`：每次 push/PR 自动跑编译矩阵。
 
 ### 🟢 18. 版本信息未维护
 `\fileversion{1.1}`/`\filedate{2025/1/15}` 长期未随修改更新，建议每次
@@ -142,6 +141,6 @@ Linux 及部分精简 TeX 环境没有该字体，编译直接失败（本次重
 | 批次 | 条目 | 理由 |
 |---|---|---|
 | ~~第一批~~ | ~~1、2、3~~ | ✅ 已完成（13 也一并解决） |
-| 第二批 | 16、17 | 一次投入，之后所有改动都有安全网 |
-| 第三批 | 4、5、6、12 | 瘦身与健壮性，回归成本低 |
+| ~~第二批~~ | ~~16、17~~ | ✅ 已完成（12 为支持 CI 一并修复；16 遗留示例 PDF 待作者决定） |
+| 第三批 | 4、5、6 | 瘦身与健壮性，回归成本低 |
 | 按需 | 其余 | 视维护意愿与时间 |

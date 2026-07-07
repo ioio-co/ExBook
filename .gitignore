@@ -1,0 +1,19 @@
+# LaTeX 编译产物
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.xdv
+*.nav
+*.snm
+*.vrb
+missfont.log
+
+# 测试构建目录
+/build/
+
+# 系统文件
+.DS_Store

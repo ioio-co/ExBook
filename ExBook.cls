@@ -104,7 +104,11 @@
 \else
     \hypersetup {colorlinks=true,linkcolor=black, urlcolor=themeColor, citecolor=red}
 \fi
-\setmainfont{Times New Roman} % 设置全局英文字体为 Times New Roman
+% 全局英文字体：优先 Times New Roman，系统缺失时回退到
+% TeX Gyre Termes（texlive 自带的 Times 兼容字体，Linux/CI 下可直接编译）
+\IfFontExistsTF{Times New Roman}
+    {\setmainfont{Times New Roman}}
+    {\setmainfont{TeX Gyre Termes}}
 
 \renewcommand\arraystretch{1.3}  % 表格行高（选择题选项间距）
 \renewcommand{\baselinestretch}{1.3} % 设置行间距
