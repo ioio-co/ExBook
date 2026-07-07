@@ -217,7 +217,7 @@
 \newcommand\Rhead[1]{\def\ExBook@value@Rhead{\textbf{#1}}}
 \newcommand\LheadC[1]{\def\ExBook@value@LheadC{\textbf{#1}}}
 \newcommand\TextWater[1]{\def\ExBook@value@TextWater{\textcolor{black!38}{\selectfont #1}}}
-\newcommand{\textwater}{\def\ExBook@value@TextWater}
+\newcommand{\textwater}{\ExBook@value@TextWater} % 输出行内文字水印
 \newcommand\WaterImg[1]{\def\ExBook@value@waterImg{#1}}
 \newcommand\CoverImg[1]{\def\ExBook@value@coverImg{#1}}
 \newcommand\OnlineCheckUrl[1]{\def\ExBook@value@onlineCheckUrl{#1}}
@@ -231,7 +231,7 @@
 \newcommand{\eblankbox}{(\hspace{1.5em})} % 英文空括号
 \newcommand{\blankline}{\underline{\hspace{3em}}} % 空白下划线
 \newcommand{\noreftitle}[1]{\par \textbf{#1} \par} % 无索引标题
-\newcommand{\onlinecheckurl}{\ExBook@value@onlineCheckUrl} % 空白下划线
+\newcommand{\onlinecheckurl}{\ExBook@value@onlineCheckUrl} % 在线勘误文档地址
 
 % 定义一个只隐藏当前页的页眉和页脚的命令
 \newcommand{\hideheaderfooter}{
@@ -286,12 +286,12 @@
     }
 }
 
-% 定义一个命令，按照一定概率显示句子
+% 按概率显示句子：可选参数为显示概率（百分比，默认 1 即 1%），参数 2 为句子内容
 \newcommand{\randomtextwater}[2][1]{
-    \pgfmathsetmacro{\randnum}{int(rnd*100)} % 生成一个 0 到 1 之间的随机数
-    \ifnum \randnum<#1 
+    \pgfmathsetmacro{\randnum}{int(rnd*100)} % 生成一个 0 到 99 之间的随机整数
+    \ifnum \randnum<#1
         #2 % 显示句子
-    \fi 
+    \fi
 }
 
 %                         ***********************
@@ -583,43 +583,33 @@
 \@resetcountertrue 
 \@showcountertrue   
 
-\define@key{qitems}{unreset}[true]{\@resetcounterfalse} 
-\define@key{qitems}{unshow}[true]{\@showcounterfalse} 
-\define@key{qitems}{prefix}[]{\def\@prefix{#1}} 
-\define@key{qitems}{suffix}[.]{\def\@suffix{#1}} 
-\define@key{qitems}{optprefix}[]{\def\@optprefix{#1}} 
-\define@key{qitems}{optsuffix}[]{\def\@optsuffix{#1}} 
-\define@key{qitems}{startnum}[0]{\def\@startnum{#1}} 
+\define@key{qitems}{unreset}[true]{\@resetcounterfalse}
+\define@key{qitems}{unshow}[true]{\@showcounterfalse}
+\define@key{qitems}{prefix}[]{\def\@prefix{#1}}
+\define@key{qitems}{suffix}[.]{\def\@suffix{#1}}
+\define@key{qitems}{optprefix}[]{\def\@optprefix{#1}}
+\define@key{qitems}{optsuffix}[.]{\def\@optsuffix{#1}}
+\define@key{qitems}{startnum}[0]{\def\@startnum{#1}}
+
+% 各键的默认值只在这里定义一处；类级默认值也让选择题命令在 qitems 外可用
+\def\@prefix{}
+\def\@suffix{.}
+\def\@optprefix{}
+\def\@optsuffix{.}
+\def\@startnum{} % 空表示沿用当前题号
 
 % 定义题目环境
 \newenvironment{qitems}[1][]{
     \begingroup
     \setkeys{qitems}{#1} % 解析传入的键值对
-    
+
     \if@resetcounter
         \setcounter{QuestionCounter}{0}
     \fi
 
-    \ifx\@prefix\undefined
-        \def\@prefix{} 
-    \fi
-    \ifx\@suffix\undefined
-        \def\@suffix{.} 
-    \fi
-
-    \ifx\@optprefix\undefined
-        \def\@optprefix{}
-    \fi
-    \ifx\@optsuffix\undefined
-        \def\@optsuffix{.} 
-    \fi 
-
-    \ifx\@startnum\undefined
-        \def\@startnum{0}
-    \else
-        \setcounter{QuestionCounter}{\@startnum}
-        \addtocounter{QuestionCounter}{-1}
-    \fi
+    \ifdefvoid{\@startnum}{}{%
+        \setcounter{QuestionCounter}{\@startnum}%
+        \addtocounter{QuestionCounter}{-1}}
 
 	\par \begingroup \par
 }{
