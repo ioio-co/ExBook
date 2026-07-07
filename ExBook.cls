@@ -241,46 +241,42 @@
   \thispagestyle{emptyheaderfooter}
 }
 
-% 插入图片命令，参数1为缩放比例，参数2为对齐方式，参数3为图片路径，
-\newcommand{\imgin}[3][0.38]{ % 默认缩放比例为 1.0
-    \par
-    \begin{minipage}[t]{1.0\textwidth}
-        \ifx&#2& % 判断是否有对齐参数
-            \centering
-        \else
-            \ifx#2l % 左对齐
-                \raggedright
-            \else
-                \ifx#2r % 右对齐
-                    \raggedleft
-                \else % 默认居中
-                    \centering
-                \fi
-            \fi
-        \fi
-        \includegraphics[scale=#1]{#3} 
-    \end{minipage}
-}
-
-\newcommand{\autotilte}[3][]{
-    \par
-
-    \ifx&#1& % 判断是否有对齐参数
+% 对齐方式选择：参数为空则居中，l 左对齐，r 右对齐，其他值居中
+\newcommand{\exbook@align}[1]{%
+    \ifx&#1&%
         \centering
     \else
-        \ifx#1l % 左对齐
+        \ifx#1l%
             \raggedright
         \else
-            \ifx#1r % 右对齐
+            \ifx#1r%
                 \raggedleft
-            \else % 默认居中
+            \else
                 \centering
             \fi
         \fi
     \fi
+}
+
+% 插入图片命令，参数1为缩放比例，参数2为对齐方式，参数3为图片路径
+\newcommand{\imgin}[3][0.38]{
+    \par
+    \begin{minipage}[t]{1.0\textwidth}
+        \exbook@align{#2}
+        \includegraphics[scale=#1]{#3}
+    \end{minipage}
+}
+
+% 自由标题：可选参数为对齐方式，参数2为标题，参数3为附加内容
+\newcommand{\autotilte}[3][]{
+    \par
+
+    \exbook@align{#1}
     \begingroup \heiti{#2} \endgroup #3
     \par
 }
+% 拼写正确的别名（\autotilte 保留以兼容旧文档）
+\newcommand{\autotitle}{\autotilte}
 
 \newcommand{\insertimg}[5]{
     \foreach \n in {#1,...,#2} {
@@ -298,18 +294,42 @@
     \fi 
 }
 
-\ifcase\myPageFormat
- %                         *****************
- %                         **   A4紧凑版   **
- %                         *****************
-    \if@printmode
-        \geometry{a4paper, twoside, left=18mm, right=18mm, top=25mm, bottom=25mm, headsep=5mm, bindingoffset = 1cm}
-    \else
-        \geometry{a4paper, left=18mm, right=18mm, top=25mm, bottom=25mm, headsep=5mm}   
-    \fi
+%                         ***********************
+%                         **    版式公共构件    **
+%                         ***********************
 
-    % 自定义封面样式
-    \renewcommand{\maketitle}{
+% 页面右下角图片水印，#1 为不透明度
+\newcommand{\exbook@watermark}[1]{%
+    \if@water
+        \begin{tikzpicture}[overlay,remember picture]
+            \node[anchor=east, opacity=#1] at ([xshift=-1.2cm, yshift=4.8cm]current page.south east)  {\includegraphics[width=0.16\textwidth]{\ExBook@value@waterImg}};
+        \end{tikzpicture}%
+    \fi
+}
+
+% 页眉页脚使用的章节标记
+\newcommand{\exbook@setsectionmarks}{%
+    \if@notocnum
+        \renewcommand{\sectionmark}[1]{\markboth{##1}{}}%
+        \renewcommand{\subsectionmark}[1]{\markright{##1}{}}%
+    \else
+        \renewcommand{\sectionmark}[1]{\markboth{\thesection ##1}{}}%
+        \renewcommand{\subsectionmark}[1]{\markright{\thesubsection ##1}{}}%
+    \fi
+}
+
+% ---------- A4 系版式（紧凑/标准/宽松/单题）共用 ----------
+
+\newcommand{\exbook@afour@geometry}{%
+    \if@printmode
+        \geometry{a4paper, twoside, left=18mm, right=18mm, top=25mm, bottom=25mm, headsep=5mm, bindingoffset = 1cm}%
+    \else
+        \geometry{a4paper, left=18mm, right=18mm, top=25mm, bottom=25mm, headsep=5mm}%
+    \fi
+}
+
+% A4 封面：#1 版式标识 #2 座右铭纵向偏移 #3 标识字号
+\newcommand{\exbook@afour@cover}[3]{%
     \begin{titlepage}
         \begin{tikzpicture}[remember picture, overlay]
             \node[anchor=north, inner sep=0pt] at (current page.north) {\includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{\ExBook@value@coverImg}};
@@ -320,641 +340,236 @@
             \fill[themeColor!6.2] (current page.south west) rectangle ++(\paperwidth,2cm);
             \node[anchor=south, align=center] at ([yshift=0.8cm]current page.south) {\color{themeColor}\fontsize{16pt}{0}{\ExBook@value@Creator}};
             \node[anchor=south, align=center] at ([yshift=0.2cm]current page.south) {\color{themeColor}\fontsize{12pt}{0}{\ExBook@value@UpdateTime}};
-            \node[anchor=south, align=center] at ([yshift=2.5cm]current page.south) {\color{themeColor}\fontsize{12pt}{0}{\ExBook@value@motto}};
+            \node[anchor=south, align=center] at ([yshift=#2]current page.south) {\color{themeColor}\fontsize{12pt}{0}{\ExBook@value@motto}};
             \fill[themeColor!6.2, rounded corners=16pt] ([yshift=4cm, xshift=14cm]current page.south west) rectangle ++(5cm,2cm);
-            \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=16.5cm]current page.south west) {\color{themeColor}\fontsize{22pt}{0}\ExBook@value@TypeOne};
-            
+            \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=16.5cm]current page.south west) {\color{themeColor}\fontsize{#3}{0}#1};
             \if@online
                 \node[anchor=south, align=center] at ([yshift=5.5cm, xshift=4.5cm]current page.south west) {\color{themeColor}\fontsize{14pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
                 \fill[themeColor!6.2, rounded corners=6pt] ([yshift=4.5cm, xshift=1.50cm]current page.south west) rectangle ++(7cm,1cm);
                 \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=5.2cm]current page.south west) {\color{themeColor}\fontsize{16pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
             \fi
         \end{tikzpicture}
-    \end{titlepage}
+    \end{titlepage}%
+}
 
+% printmode 下在封面背面留一页空白
+\newcommand{\exbook@printblankpage}{%
     \if@printmode
         \clearpage
         \null
         \thispagestyle{empty}
         \clearpage
     \fi
-    }
+}
 
-    % 启用自定义页眉
-    \pagestyle{fancy}
-    
-    % 清除当前的页眉和页脚设置
-    \fancyhf{}
-
-    % 设置页眉内容
-    \fancyhead[L]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Lhead}}}
-    \fancyhead[C]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Chead}} }
-    \fancyhead[R]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Rhead}} }
-
-    % 设置页码位置
-    \fancyfoot[C]{\color{themeColor} 第 \thepage 页  / 共 \pageref{LastPage} 页}
+% A4 页眉页脚
+\newcommand{\exbook@afour@headfoot}{%
+    \pagestyle{fancy}%
+    \fancyhf{}%
+    \fancyhead[L]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Lhead}}}%
+    \fancyhead[C]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Chead}} }%
+    \fancyhead[R]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Rhead}} }%
+    \fancyfoot[C]{\color{themeColor}第 \thepage 页  / 共 \pageref{LastPage} 页 }%
     \if@showmark
-        \fancyfoot[L]{\color{themeColor}\kaishu  \truncate{7cm}{\leftmark}}
-        \fancyfoot[R]{\color{themeColor}\kaishu  \truncate{7cm}{\rightmark}}
-        \if@notocnum
-            \renewcommand{\sectionmark}[1]{\markboth{#1}{}}
-            \renewcommand{\subsectionmark}[1]{\markright{#1}{}}
-        \else
-            \renewcommand{\sectionmark}[1]{\markboth{\thesection #1}{}}
-            \renewcommand{\subsectionmark}[1]{\markright{\thesubsection #1}{}}
-        \fi
+        \fancyfoot[L]{\color{themeColor}\kaishu  \truncate{7cm}{\leftmark}}%
+        \fancyfoot[R]{\color{themeColor}\kaishu  \truncate{7cm}{\rightmark}}%
+        \exbook@setsectionmarks
+    \fi
+    \renewcommand{\headrulewidth}{0.4pt}%
+    \renewcommand{\footrulewidth}{0pt}%
+}
+
+%                         *****************
+%                         **   版式定义   **
+%                         *****************
+
+% padl / padp 共用一套 Pad 版逻辑
+\newif\if@exbookpad
+\ifnum\myPageFormat=2 \@exbookpadtrue\fi
+\ifnum\myPageFormat=5 \@exbookpadtrue\fi
+
+\if@exbookpad
+%                         *****************
+%                         **    Pad 版    **
+%                         *****************
+    % 深色 / 浅色模式的差异集中在以下四个定义
+    \if@darkmode
+        \tikzset{exbook@pad@dim/.style={opacity=0.382}}% 深色下色块整体减淡
+        \def\exbook@pad@second{themeColor!61.8}% 次要色块颜色
+        \def\exbook@pad@secondwd{0.217}% 页眉次要色块宽度（\paperwidth 的倍数）
+        \def\exbook@pad@text{white!61.8}% 强调文字颜色
+        \pagecolor{bg}% 页面背景颜色
+        \color{white}% 全局文字颜色
+    \else
+        \tikzset{exbook@pad@dim/.style={}}
+        \def\exbook@pad@second{themeColor!6.2}
+        \def\exbook@pad@secondwd{0.23}
+        \def\exbook@pad@text{themeColor}
     \fi
 
-    % 设置分隔线
-    \renewcommand{\headrulewidth}{0.4pt}
+    % Pad 版封面：#1 封面图位置 #2 副标题纵向偏移 #3 标识底框位置
+    %             #4 标识文字位置 #5 版式标识 #6 在线勘误区块
+    \newcommand{\exbook@padcover}[6]{%
+    \begin{titlepage}
+        \begin{tikzpicture}[remember picture, overlay]
+            \node[anchor=north, inner sep=0pt](image) at ([#1]current page.north west) {\includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{\ExBook@value@coverImg}};
+
+            \fill[fill=\exbook@pad@second, exbook@pad@dim] ([yshift=0cm]current page.west) rectangle ++(\paperwidth,2cm);
+            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=1cm, xshift=1cm]current page.west) {\color{\exbook@pad@text} \fontsize{24pt}{0}{\textbf{\ExBook@value@PreTitle}}};
+            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-1cm, xshift=1cm]current page.west) {\fontsize{32pt}{0}{\textbf{\kaishu \ExBook@value@Title}}};
+            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=#2, xshift=1cm]current page.west) {\fontsize{28pt}{0}{\textbf{\ExBook@value@TitleDescription}}};
+            \fill[fill=\exbook@pad@second, exbook@pad@dim] (current page.south west) rectangle ++(\paperwidth,2cm);
+            \node[anchor=south, align=center] at ([yshift=0.8cm]current page.south) {\color{\exbook@pad@text}\fontsize{16pt}{0}{\ExBook@value@Creator}};
+            \node[anchor=south, align=center] at ([yshift=0.2cm]current page.south) {\color{\exbook@pad@text}\fontsize{12pt}{0}{\ExBook@value@UpdateTime}};
+
+            \node[anchor=south, align=center] at ([yshift=2.4cm]current page.south) {\color{\exbook@pad@text}\fontsize{12pt}{0}{\ExBook@value@motto}};
+
+            \fill[fill=\exbook@pad@second, exbook@pad@dim, rounded corners=12pt] ([#3]current page.south west) rectangle ++(3.5cm,1.5cm);
+            \node[anchor=south, align=center] at ([#4]current page.south west) {\color{\exbook@pad@text}\fontsize{16pt}{0}\textbf{#5}};
+
+            \if@online
+                #6%
+            \fi
+        \end{tikzpicture}
+    \end{titlepage}%
+    }
+
+    % 页眉横条文字
+    \newcommand{\myrecttext}{\fontsize{14}{0} \textbf{\ExBook@value@LheadC \ExBook@value@Chead \ExBook@value@Rhead}}
+    \newcommand{\myrecttexttwo}{\fontsize{8pt}{0}{\textbf{  \kaishu  \truncate{4cm}{\leftmark}}}}
+    \newcommand{\myrecttextthree}{\fontsize{8pt}{0}{\textbf{ \kaishu \truncate{4cm}{\rightmark}}}}
+
+    % 页眉横条（含页码）
+    \newcommand{\exbook@padheader}{%
+    \begin{tikzpicture}[remember picture,overlay]
+        \fill[fill=themeColor, exbook@pad@dim] (current page.north west) rectangle ++(0.668\paperwidth,-0.8cm);
+        \node[anchor=north west, text width=\paperwidth, text height=0.4cm, align=left] at ([xshift=0.0em]current page.north west) {%
+        \textcolor{white}{\myrecttext}
+        };
+
+        \fill[fill=\exbook@pad@second, exbook@pad@dim] ([xshift=-0.332\paperwidth]current page.north east) rectangle ++(\exbook@pad@secondwd\paperwidth,-0.8cm);
+        \node[anchor=north west, text width=\paperwidth, text height=0.16cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
+        \textcolor{\exbook@pad@text}{\myrecttexttwo}
+        };
+        \node[anchor=north west, text width=\paperwidth, text height=0.52cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
+        \textcolor{\exbook@pad@text}{\myrecttextthree}
+        };
+
+        \fill[fill=themeColor, exbook@pad@dim] ([xshift=-0.115\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
+        \fill[fill=themeColor!60, exbook@pad@dim] ([xshift=-0.075\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
+        \fill[fill=themeColor!20, exbook@pad@dim] ([xshift=-0.024\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
+
+        \draw[line width=1.5pt, color=themeColor] (current page.north west) ++(0,-0.8cm) -- ++(\paperwidth,0);
+
+        \node[anchor=east, text height=1.2cm, font=\small] at ([xshift=-8.5cm, yshift=1.5cm]current page.south east) {\color{\exbook@pad@text}  第 \thepage 页  / 共 \pageref{LastPage} 页};
+    \end{tikzpicture}%
+    }
+
+    \pagestyle{fancy}
+    \fancyhf{} % 清空当前设置
+    \renewcommand{\headrulewidth}{0pt} % 移除页眉底部的横线
     \renewcommand{\footrulewidth}{0pt}
+    \exbook@setsectionmarks
+    \chead{\exbook@padheader}
 
     % 创建单个题目环境
     \newenvironment{bbox}
     {
-
-    }
-    {
-    \if@water
-        \begin{tikzpicture}[overlay,remember picture]
-            \node[anchor=east, opacity=0.01,] at ([xshift=-1.2cm, yshift=4.8cm]current page.south east)  {\includegraphics[width=0.16\textwidth]{\ExBook@value@waterImg}}; 
-        \end{tikzpicture}
-    \fi
-    }
-    
-\or
- %                         *****************
- %                         **   A4标准版   **
- %                         *****************
-    \if@printmode
-    \geometry{a4paper, twoside, left=18mm, right=18mm, top=25mm, bottom=25mm, headsep=5mm, bindingoffset = 1cm}
-    \else
-        \geometry{a4paper, left=18mm, right=18mm, top=25mm, bottom=25mm, headsep=5mm}   
-    \fi
-
-    % 自定义封面样式
-    \renewcommand{\maketitle}{
-    \begin{titlepage}
-        \begin{tikzpicture}[remember picture, overlay]
-            \node[anchor=north, inner sep=0pt] at (current page.north) {\includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{\ExBook@value@coverImg}};
-            \fill[themeColor!6.2] ([yshift=2cm]current page.west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=3cm, xshift=1.5cm]current page.west) {\color{themeColor} \fontsize{24pt}{0}{\ExBook@value@PreTitle}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=0cm, xshift=1.5cm]current page.west) {\fontsize{36pt}{0}{\ExBook@value@Title}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-1.8cm, xshift=1.5cm]current page.west) {\fontsize{32pt}{0}{\ExBook@value@TitleDescription}};
-            \fill[themeColor!6.2] (current page.south west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=south, align=center] at ([yshift=0.8cm]current page.south) {\color{themeColor}\fontsize{16pt}{0}{\ExBook@value@Creator}};
-            \node[anchor=south, align=center] at ([yshift=0.2cm]current page.south) {\color{themeColor}\fontsize{12pt}{0}{\ExBook@value@UpdateTime}};
-            \node[anchor=south, align=center] at ([yshift=3cm]current page.south) {\color{themeColor}\fontsize{12pt}{0}{\ExBook@value@motto}};
-            \fill[themeColor!6.2, rounded corners=16pt] ([yshift=4cm, xshift=14cm]current page.south west) rectangle ++(5cm,2cm);
-            \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=16.5cm]current page.south west) {\color{themeColor}\fontsize{24pt}{0}\ExBook@value@TypeTwo};
-            \if@online
-                \node[anchor=south, align=center] at ([yshift=5.5cm, xshift=4.5cm]current page.south west) {\color{themeColor}\fontsize{14pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
-                \fill[themeColor!6.2, rounded corners=6pt] ([yshift=4.5cm, xshift=1.50cm]current page.south west) rectangle ++(7cm,1cm);
-                \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=5.2cm]current page.south west) {\color{themeColor}\fontsize{16pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
-            \fi
-        \end{tikzpicture}
-    \end{titlepage}
-    \if@printmode
-        \clearpage
-        \null
-        \thispagestyle{empty}
-        \clearpage
-    \fi
-    }
-
-    \pagestyle{fancy} % 启用自定义页眉
-
-    % 清除当前的页眉和页脚设置
-    \fancyhf{}
-
-    % 设置页眉内容
-    \fancyhead[L]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Lhead}}}
-    \fancyhead[C]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Chead}} }
-    \fancyhead[R]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Rhead}} }
-
-    % 设置页码位置
-    \fancyfoot[C]{\color{themeColor}第 \thepage 页  / 共 \pageref{LastPage} 页 }
-    
-    \if@showmark
-        \fancyfoot[L]{\color{themeColor}\kaishu  \truncate{7cm}{\leftmark}}
-        \fancyfoot[R]{\color{themeColor}\kaishu  \truncate{7cm}{\rightmark}}
-        \if@notocnum
-            \renewcommand{\sectionmark}[1]{\markboth{#1}{}}
-            \renewcommand{\subsectionmark}[1]{\markright{#1}{}}
-        \else
-            \renewcommand{\sectionmark}[1]{\markboth{\thesection #1}{}}
-            \renewcommand{\subsectionmark}[1]{\markright{\thesubsection #1}{}}
-        \fi
-    \fi
-
-    % 设置分隔线
-    \renewcommand{\headrulewidth}{0.4pt}
-    \renewcommand{\footrulewidth}{0pt}
-
-    \newenvironment{bbox}
-    {
-    \begin{minipage}{\textwidth}
-    }
-    {
-
-    \vspace*{2.5cm}
-    \end{minipage}
-
-    \if@water
-        \begin{tikzpicture}[overlay,remember picture]
-            \node[anchor=east, opacity=0.02] at ([xshift=-1.2cm, yshift=4.8cm]current page.south east)  {\includegraphics[width=0.16\textwidth]{\ExBook@value@waterImg}}; 
-        \end{tikzpicture}
-    \fi
-    % \newpage % 在环境结束时插入新页面
-    }
-\or
- %                         *****************
- %                         **   横Pad版    **
- %                         *****************
-
-    \geometry{paperheight=150mm, paperwidth=200mm,left=12mm,right=12mm,top=10mm,bottom=15mm}
-    \if@darkmode
-        % 设置页面背景颜色
-        \pagecolor{bg} % 使用 10% 不透明度的蓝色作为页面背景颜色
-
-        % 设置全局文字颜色
-        \color{white} % 将全局文字颜色设置为红色
-    \fi
-    % 自定义封面样式
-    \renewcommand{\maketitle}{
-    \begin{titlepage}
-        \if@darkmode
-        \begin{tikzpicture}[remember picture, overlay]
-            \node[anchor=north, inner sep=0pt](image) at ([xshift=10cm, yshift=5cm]current page.north west) {\includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{\ExBook@value@coverImg}};
-
-            \fill[themeColor!61.8, opacity=0.382] ([yshift=0cm]current page.west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=1cm, xshift=1cm]current page.west) {\color{white!61.8} \fontsize{24pt}{0}{\textbf{\ExBook@value@PreTitle}}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-1cm, xshift=1cm]current page.west) {\fontsize{32pt}{0}{\textbf{\kaishu \ExBook@value@Title}}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-2.5cm, xshift=1cm]current page.west) {\fontsize{28pt}{0}{\textbf{\ExBook@value@TitleDescription}}};
-            \fill[themeColor!61.8, opacity=0.382] (current page.south west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=south, align=center] at ([yshift=0.8cm]current page.south) {\color{white!61.8}\fontsize{16pt}{0}{\ExBook@value@Creator}};
-            \node[anchor=south, align=center] at ([yshift=0.2cm]current page.south) {\color{white!61.8}\fontsize{12pt}{0}{\ExBook@value@UpdateTime}};
-
-            \node[anchor=south, align=center] at ([yshift=2.4cm]current page.south) {\color{white!61.8}\fontsize{12pt}{0}{\ExBook@value@motto}};
-
-            \fill[themeColor!61.8, opacity=0.382, rounded corners=12pt] ([yshift=2.5cm, xshift=15.5cm]current page.south west) rectangle ++(3.5cm,1.5cm);
-            \node[anchor=south, align=center] at ([yshift=2.8cm, xshift=17.3cm]current page.south west) {\color{white!61.8}\fontsize{16pt}{0}\textbf{\ExBook@value@TypeThree}};
-
-            \if@online
-                \node[anchor=south, align=center] at ([yshift=1.0cm, xshift=3.25cm]current page.south west) {\color{white!61.8}\fontsize{10pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
-                \node[anchor=south, align=center] at ([yshift=0.35cm, xshift=3.4cm]current page.south west) {\color{white!61.8}\fontsize{10pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
-            \fi
-        \end{tikzpicture} 
-        \else
-        \begin{tikzpicture}[remember picture, overlay]
-            \node[anchor=north, inner sep=0pt](image) at ([xshift=10cm, yshift=5cm]current page.north west) {\includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{\ExBook@value@coverImg}};
-
-            \fill[themeColor!6.2] ([yshift=0cm]current page.west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=1cm, xshift=1cm]current page.west) {\color{themeColor} \fontsize{24pt}{0}{\textbf{\ExBook@value@PreTitle}}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-1cm, xshift=1cm]current page.west) {\fontsize{32pt}{0}{\textbf{\kaishu \ExBook@value@Title}}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-2.5cm, xshift=1cm]current page.west) {\fontsize{28pt}{0}{\textbf{\ExBook@value@TitleDescription}}};
-            \fill[themeColor!6.2] (current page.south west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=south, align=center] at ([yshift=0.8cm]current page.south) {\color{themeColor}\fontsize{16pt}{0}{\ExBook@value@Creator}};
-            \node[anchor=south, align=center] at ([yshift=0.2cm]current page.south) {\color{themeColor}\fontsize{12pt}{0}{\ExBook@value@UpdateTime}};
-
-            \node[anchor=south, align=center] at ([yshift=2.4cm]current page.south) {\color{themeColor}\fontsize{12pt}{0}{\ExBook@value@motto}};
-
-            \fill[themeColor!6.2, rounded corners=12pt] ([yshift=2.5cm, xshift=15.5cm]current page.south west) rectangle ++(3.5cm,1.5cm);
-            \node[anchor=south, align=center] at ([yshift=2.8cm, xshift=17.3cm]current page.south west) {\color{themeColor}\fontsize{16pt}{0}\textbf{\ExBook@value@TypeThree}};
-
-            \if@online
-                \node[anchor=south, align=center] at ([yshift=1.0cm, xshift=3.25cm]current page.south west) {\color{themeColor}\fontsize{10pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
-                \node[anchor=south, align=center] at ([yshift=0.35cm, xshift=3.4cm]current page.south west) {\color{themeColor}\fontsize{10pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
-            \fi
-        \end{tikzpicture}
-        \fi
-        
-    \end{titlepage}
-    }
-
-    \pagestyle{fancy}
-    \fancyhf{} % 清空当前设置
-
-    \renewcommand{\headrulewidth}{0pt} % 移除页眉底部的横线
-    \renewcommand{\footrulewidth}{0pt} % 页面底部横线 \faWeixin{}
-    \newcommand{\myrecttext}{\fontsize{14}{0} \textbf{\ExBook@value@LheadC \ExBook@value@Chead \ExBook@value@Rhead}}
-    \newcommand{\myrecttextolus}{\fontsize{14}{0}\heiti \leftmark}
-    \newcommand{\myrecttexttwo}{\fontsize{8pt}{0}{\textbf{  \kaishu  \truncate{4cm}{\leftmark}}}}
-    \newcommand{\myrecttextthree}{\fontsize{8pt}{0}{\textbf{ \kaishu \truncate{4cm}{\rightmark}}}}
-
-    \if@notocnum
-        \renewcommand{\sectionmark}[1]{\markboth{#1}{}}
-        \renewcommand{\subsectionmark}[1]{\markright{#1}{}}
-    \else
-        \renewcommand{\sectionmark}[1]{\markboth{\thesection #1}{}}
-        \renewcommand{\subsectionmark}[1]{\markright{\thesubsection #1}{}}
-    \fi
-
-
-    % 在每页的页眉位置添加矩形
-    \chead{%
-    \if@darkmode
-    \begin{tikzpicture}[remember picture,overlay]
-        \fill[themeColor, opacity=0.382] (current page.north west) rectangle ++(0.668\paperwidth,-0.8cm);
-        \node[anchor=north west, text width=\paperwidth, text height=0.4cm, align=left] at ([xshift=0.0em]current page.north west) {%
-        \textcolor{white}{\myrecttext}
-        };
-        
-        \fill[themeColor!61.8, opacity=0.382] ([xshift=-0.332\paperwidth]current page.north east) rectangle ++(0.217\paperwidth,-0.8cm);
-        \node[anchor=north west, text width=\paperwidth, text height=0.16cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
-        \textcolor{white!61.8}{\myrecttexttwo}
-        };
-        \node[anchor=north west, text width=\paperwidth, text height=0.52cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
-        \textcolor{white!61.8}{\myrecttextthree}
-        };
-
-        \fill[themeColor, opacity=0.382] ([xshift=-0.115\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \node[anchor=east, text=white, text height=1.2cm] at (current page.north east) {};
-
-        \fill[themeColor!60, opacity=0.382] ([xshift=-0.075\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \node[anchor=east, text=white, text height=1.2cm] at (current page.north east) {};
-
-        \fill[themeColor!20, opacity=0.382] ([xshift=-0.024\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \node[anchor=east, text=white, text height=1.2cm] at (current page.north east) {};
-
-        \draw[line width=1.5pt, color=themeColor] (current page.north west) ++(0,-0.8cm) -- ++(\paperwidth,0);
-
-        \node[anchor=east, text height=1.2cm, font=\small] at ([xshift=-8.5cm, yshift=1.5cm]current page.south east) {\color{white!61.8}  第 \thepage 页  / 共 \pageref{LastPage} 页};
-    \end{tikzpicture}
-    \else
-    \begin{tikzpicture}[remember picture,overlay]
-        \fill[themeColor] (current page.north west) rectangle ++(0.668\paperwidth,-0.8cm);
-        \node[anchor=north west, text width=\paperwidth, text height=0.4cm, align=left] at ([xshift=0.0em]current page.north west) {%
-        \textcolor{white}{\myrecttext}
-        };
-        
-        \fill[themeColor!6.2] ([xshift=-0.332\paperwidth]current page.north east) rectangle ++(0.23\paperwidth,-0.8cm);
-        \node[anchor=north west, text width=\paperwidth, text height=0.16cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
-        \textcolor{themeColor}{\myrecttexttwo}
-        };
-        \node[anchor=north west, text width=\paperwidth, text height=0.52cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
-        \textcolor{themeColor}{\myrecttextthree}
-        };
-
-        \fill[themeColor] ([xshift=-0.115\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \node[anchor=east, text=white, text height=1.2cm] at (current page.north east) {};
-
-        \fill[themeColor!60] ([xshift=-0.075\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \node[anchor=east, text=white, text height=1.2cm] at (current page.north east) {};
-
-        \fill[themeColor!20] ([xshift=-0.024\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \node[anchor=east, text=white, text height=1.2cm] at (current page.north east) {};
-
-        \draw[line width=1.5pt, color=themeColor] (current page.north west) ++(0,-0.8cm) -- ++(\paperwidth,0);
-
-        \node[anchor=east, text height=1.2cm, font=\small] at ([xshift=-8.5cm, yshift=1.5cm]current page.south east) {\color{themeColor}  第 \thepage 页  / 共 \pageref{LastPage} 页};
-    \end{tikzpicture}
-    \fi
-    
-    }
-    
-    \newenvironment{bbox}
-    {
         \begingroup
     }
     {
         \endgroup
-        \if@water
-        \begin{tikzpicture}[overlay,remember picture]
-            \node[anchor=east, opacity=0.08] at ([xshift=-1.2cm, yshift=4.8cm]current page.south east)  {\includegraphics[width=0.16\textwidth]{\ExBook@value@waterImg}}; 
-        \end{tikzpicture}
-        \fi
+        \exbook@watermark{0.08}
         \newpage % 在环境结束时插入新页面
     }
-\or
- %                         *****************
- %                         **   A4宽松版   **
- %                         *****************
 
-    \if@printmode
-        \geometry{a4paper, twoside, left=18mm, right=18mm, top=25mm, bottom=25mm, headsep=5mm, bindingoffset = 1cm}
+    % 两种 Pad 版式只差纸张尺寸与封面上的少量坐标
+    \ifnum\myPageFormat=2
+        % 横版 Pad
+        \geometry{paperheight=150mm, paperwidth=200mm,left=12mm,right=12mm,top=10mm,bottom=15mm}
+        \renewcommand{\maketitle}{%
+            \exbook@padcover{xshift=10cm, yshift=5cm}{-2.5cm}%
+                {yshift=2.5cm, xshift=15.5cm}{yshift=2.8cm, xshift=17.3cm}%
+                {\ExBook@value@TypeThree}{%
+                \node[anchor=south, align=center] at ([yshift=1.0cm, xshift=3.25cm]current page.south west) {\color{\exbook@pad@text}\fontsize{10pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
+                \node[anchor=south, align=center] at ([yshift=0.35cm, xshift=3.4cm]current page.south west) {\color{\exbook@pad@text}\fontsize{10pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
+                }%
+        }
     \else
-        \geometry{a4paper, left=18mm, right=18mm, top=25mm, bottom=25mm, headsep=5mm}   
+        % 竖版 Pad
+        \geometry{paperheight=250mm, paperwidth=200mm,left=12mm,right=12mm,top=10mm,bottom=15mm}
+        \renewcommand{\maketitle}{%
+            \exbook@padcover{xshift=10cm, yshift=0cm}{-2.8cm}%
+                {yshift=3.5cm, xshift=15.0cm}{yshift=3.8cm, xshift=16.8cm}%
+                {\ExBook@value@TypeSix}{%
+                \node[anchor=south, align=center] at ([yshift=5.5cm, xshift=3.8cm]current page.south west) {\color{\exbook@pad@text}\fontsize{14pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
+                \fill[fill=\exbook@pad@second, exbook@pad@dim, rounded corners=6pt] ([yshift=4.5cm, xshift=0.80cm]current page.south west) rectangle ++(7cm,1cm);
+                \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=4.5cm]current page.south west) {\color{\exbook@pad@text}\fontsize{16pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
+                }%
+        }
     \fi
 
-    % 自定义封面样式
-    \renewcommand{\maketitle}{
-    \begin{titlepage}
-        
-        \begin{tikzpicture}[remember picture, overlay]
-            \node[anchor=north, inner sep=0pt] at (current page.north) {\includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{\ExBook@value@coverImg}};
-            \fill[themeColor!6.2] ([yshift=2cm]current page.west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=3cm, xshift=1.5cm]current page.west) {\color{themeColor} \fontsize{24pt}{0}{\ExBook@value@PreTitle}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=0cm, xshift=1.5cm]current page.west) {\fontsize{36pt}{0}{\ExBook@value@Title}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-1.8cm, xshift=1.5cm]current page.west) {\fontsize{32pt}{0}{\ExBook@value@TitleDescription}};
-            \fill[themeColor!6.2] (current page.south west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=south, align=center] at ([yshift=0.8cm]current page.south) {\color{themeColor}\fontsize{16pt}{0}{\ExBook@value@Creator}};
-            \node[anchor=south, align=center] at ([yshift=0.2cm]current page.south) {\color{themeColor}\fontsize{12pt}{0}{\ExBook@value@UpdateTime}};
+\else
+%                         *****************
+%                         **    A4 版     **
+%                         *****************
+    \exbook@afour@geometry
+    \exbook@afour@headfoot
 
-            \node[anchor=south, align=center] at ([yshift=3cm]current page.south) {\color{themeColor}\fontsize{12pt}{0}{\ExBook@value@motto}};
+    % 四种 A4 版式只差封面参数与题目盒子（bbox）的分页/留白策略
+    \ifcase\myPageFormat
+        % 0: A4紧凑版，题目间无空隙
+        \renewcommand{\maketitle}{\exbook@afour@cover{\ExBook@value@TypeOne}{2.5cm}{22pt}\exbook@printblankpage}
+        \newenvironment{bbox}
+        {
 
-            \fill[themeColor!6.2, rounded corners=16pt] ([yshift=4cm, xshift=14cm]current page.south west) rectangle ++(5cm,2cm);
-            \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=16.5cm]current page.south west) {\color{themeColor}\fontsize{24pt}{0}\ExBook@value@TypeFour}; 
-            \if@online
-                \node[anchor=south, align=center] at ([yshift=5.5cm, xshift=4.5cm]current page.south west) {\color{themeColor}\fontsize{14pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
-                \fill[themeColor!6.2, rounded corners=6pt] ([yshift=4.5cm, xshift=1.50cm]current page.south west) rectangle ++(7cm,1cm);
-                \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=5.2cm]current page.south west) {\color{themeColor}\fontsize{16pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
-            \fi
-        \end{tikzpicture}
-    \end{titlepage}
-    }
-
-    \pagestyle{fancy} % 启用自定义页眉
-
-    % 清除当前的页眉和页脚设置
-    \fancyhf{}
-
-    % 设置页眉内容
-    \fancyhead[L]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Lhead}}}
-    \fancyhead[C]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Chead}} }
-    \fancyhead[R]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Rhead}} }
-
-    % 设置页码位置
-    \fancyfoot[C]{\color{themeColor}第 \thepage 页  / 共 \pageref{LastPage} 页 }
-    \if@showmark
-        \fancyfoot[L]{\color{themeColor}\kaishu  \truncate{7cm}{\leftmark}}
-        \fancyfoot[R]{\color{themeColor}\kaishu  \truncate{7cm}{\rightmark}}
-        \if@notocnum
-            \renewcommand{\sectionmark}[1]{\markboth{#1}{}}
-            \renewcommand{\subsectionmark}[1]{\markright{#1}{}}
-        \else
-            \renewcommand{\sectionmark}[1]{\markboth{\thesection #1}{}}
-            \renewcommand{\subsectionmark}[1]{\markright{\thesubsection #1}{}}
-        \fi
-    \fi
-
-    % 设置分隔线
-    \renewcommand{\headrulewidth}{0.4pt}
-    \renewcommand{\footrulewidth}{0pt}
-
-    \newenvironment{bbox}
-    {
-        \begingroup
+        }
+        {
+        \exbook@watermark{0.01}
+        }
+    \or
+        % 1: A4标准版，题目不跨页，题目后留 2.5cm
+        \renewcommand{\maketitle}{\exbook@afour@cover{\ExBook@value@TypeTwo}{3cm}{24pt}\exbook@printblankpage}
+        \newenvironment{bbox}
+        {
         \begin{minipage}{\textwidth}
-    }
-    {
-        \vspace*{7.5cm}
+        }
+        {
+
+        \vspace*{2.5cm}
         \end{minipage}
-        \if@water
-            \begin{tikzpicture}[overlay,remember picture]
-                \node[anchor=east, opacity=0.02] at ([xshift=-1.2cm, yshift=4.8cm]current page.south east)  {\includegraphics[width=0.16\textwidth]{\ExBook@value@waterImg}}; 
-            \end{tikzpicture}
-        \fi
-        \endgroup
-    % \newpage % 在环境结束时插入新页面
-    }
 
-\or
- %                         *****************
- %                         **   A4单题版   **
- %                         *****************
-    % 当变量为1时，选择页面格式为b
-    \if@printmode
-        \geometry{a4paper, twoside, left=18mm, right=18mm, top=25mm, bottom=25mm, headsep=5mm, bindingoffset = 1cm}
-    \else
-        \geometry{a4paper, left=18mm, right=18mm, top=25mm, bottom=25mm, headsep=5mm}   
+        \exbook@watermark{0.02}
+        }
+    \or
+        % 2: 横版Pad（已在上方 Pad 分支处理）
+    \or
+        % 3: A4宽松版，题目不跨页，题目后留 7.5cm
+        \renewcommand{\maketitle}{\exbook@afour@cover{\ExBook@value@TypeFour}{3cm}{24pt}}
+        \newenvironment{bbox}
+        {
+            \begingroup
+            \begin{minipage}{\textwidth}
+        }
+        {
+            \vspace*{7.5cm}
+            \end{minipage}
+            \exbook@watermark{0.02}
+            \endgroup
+        }
+    \or
+        % 4: A4单题版，一页一题
+        \renewcommand{\maketitle}{\exbook@afour@cover{\ExBook@value@TypeFive}{3cm}{24pt}}
+        \newenvironment{bbox}
+        {
+            \begingroup
+        }
+        {
+            \exbook@watermark{0.02}
+            \endgroup
+            \newpage % 在环境结束时插入新页面
+        }
     \fi
-
-    % 自定义封面样式
-    \renewcommand{\maketitle}{
-    \begin{titlepage}
-        \begin{tikzpicture}[remember picture, overlay]
-            \node[anchor=north, inner sep=0pt] at (current page.north) {\includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{\ExBook@value@coverImg}};
-       
-            \fill[themeColor!6.2] ([yshift=2cm]current page.west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=3cm, xshift=1.5cm]current page.west) {\color{themeColor} \fontsize{24pt}{0}{\ExBook@value@PreTitle}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=0cm, xshift=1.5cm]current page.west) {\fontsize{36pt}{0}{\ExBook@value@Title}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-1.8cm, xshift=1.5cm]current page.west) {\fontsize{32pt}{0}{\ExBook@value@TitleDescription}};
-            \fill[themeColor!6.2] (current page.south west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=south, align=center] at ([yshift=0.8cm]current page.south) {\color{themeColor}\fontsize{16pt}{0}{\ExBook@value@Creator}};
-            \node[anchor=south, align=center] at ([yshift=0.2cm]current page.south) {\color{themeColor}\fontsize{12pt}{0}{\ExBook@value@UpdateTime}};
-        
-            \node[anchor=south, align=center] at ([yshift=3cm]current page.south) {\color{themeColor}\fontsize{12pt}{0}{\ExBook@value@motto}};
-        
-            \fill[themeColor!6.2, rounded corners=16pt] ([yshift=4cm, xshift=14cm]current page.south west) rectangle ++(5cm,2cm);
-            \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=16.5cm]current page.south west) {\color{themeColor}\fontsize{24pt}{0}\ExBook@value@TypeFive};
-        
-            \if@online
-                \node[anchor=south, align=center] at ([yshift=5.5cm, xshift=4.5cm]current page.south west) {\color{themeColor}\fontsize{14pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
-                \fill[themeColor!6.2, rounded corners=6pt] ([yshift=4.5cm, xshift=1.50cm]current page.south west) rectangle ++(7cm,1cm);
-                \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=5.2cm]current page.south west) {\color{themeColor}\fontsize{16pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
-            \fi
-        \end{tikzpicture}
-    \end{titlepage}
-    }
-
-    \pagestyle{fancy} % 启用自定义页眉
-
-    % 清除当前的页眉和页脚设置
-    \fancyhf{}
-
-    % 设置页眉内容
-    \fancyhead[L]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Lhead}}}
-    \fancyhead[C]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Chead}} }
-    \fancyhead[R]{\color{themeColor} \fontsize{10pt}{0}{\textbf{\ExBook@value@Rhead}} }
-
-    % 设置页码位置
-    \fancyfoot[C]{\color{themeColor}第 \thepage 页  / 共 \pageref{LastPage} 页 }
-
-    \if@showmark
-        \fancyfoot[L]{\color{themeColor}\kaishu  \truncate{7cm}{\leftmark}}
-        \fancyfoot[R]{\color{themeColor}\kaishu  \truncate{7cm}{\rightmark}}
-        \if@notocnum
-            \renewcommand{\sectionmark}[1]{\markboth{#1}{}}
-            \renewcommand{\subsectionmark}[1]{\markright{#1}{}}
-        \else
-            \renewcommand{\sectionmark}[1]{\markboth{\thesection #1}{}}
-            \renewcommand{\subsectionmark}[1]{\markright{\thesubsection #1}{}}
-        \fi
-    \fi
-    
-
-    % 设置分隔线
-    \renewcommand{\headrulewidth}{0.4pt}
-    \renewcommand{\footrulewidth}{0pt}
-
-    \newenvironment{bbox}
-    {
-        \begingroup
-    }
-    {
-        \if@water
-            \begin{tikzpicture}[overlay,remember picture]
-                \node[anchor=east, opacity=0.02] at ([xshift=-1.2cm, yshift=4.8cm]current page.south east)  {\includegraphics[width=0.16\textwidth]{\ExBook@value@waterImg}}; 
-            \end{tikzpicture}
-        \fi
-        \endgroup
-        \newpage % 在环境结束时插入新页面
-    }
-
-\or
- %                         *****************
- %                         **   竖Pad版   **
- %                         *****************
-    \newcommand{\myCFormat}{1}
-    \geometry{paperheight=250mm, paperwidth=200mm,left=12mm,right=12mm,top=10mm,bottom=15mm}
-
-    \if@darkmode
-        % 设置页面背景颜色
-        \pagecolor{bg} % 使用 10% 不透明度的蓝色作为页面背景颜色
-
-        % 设置全局文字颜色
-        \color{white} % 将全局文字颜色设置为红色
-    \fi
-    % 自定义封面样式
-    \renewcommand{\maketitle}{
-    \begin{titlepage}
-        \if@darkmode
-            \begin{tikzpicture}[remember picture, overlay]
-            \node[anchor=north, inner sep=0pt](image) at ([xshift=10cm, yshift=0cm]current page.north west) {\includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{\ExBook@value@coverImg}};
-       
-            \fill[themeColor!61.8, opacity=0.382] ([yshift=0cm]current page.west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=1cm, xshift=1cm]current page.west) {\color{white!61.8} \fontsize{24pt}{0}{\textbf{\ExBook@value@PreTitle}}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-1cm, xshift=1cm]current page.west) {\fontsize{32pt}{0}{\textbf{\kaishu \ExBook@value@Title}}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-2.8cm, xshift=1cm]current page.west) {\fontsize{28pt}{0}{\textbf{\ExBook@value@TitleDescription}}};
-            \fill[themeColor!61.8, opacity=0.382] (current page.south west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=south, align=center] at ([yshift=0.8cm]current page.south) {\color{white!61.8}\fontsize{16pt}{0}{\ExBook@value@Creator}};
-            \node[anchor=south, align=center] at ([yshift=0.2cm]current page.south) {\color{white!61.8}\fontsize{12pt}{0}{\ExBook@value@UpdateTime}};
-
-            \node[anchor=south, align=center] at ([yshift=2.4cm]current page.south) {\color{white!61.8}\fontsize{12pt}{0}{\ExBook@value@motto}};
-        
-            \fill[themeColor!61.8, opacity=0.382, rounded corners=12pt] ([yshift=3.5cm, xshift=15.0cm]current page.south west) rectangle ++(3.5cm,1.5cm);
-            \node[anchor=south, align=center] at ([yshift=3.8cm, xshift=16.8cm]current page.south west) {\color{white!61.8}\fontsize{16pt}{0}\textbf{\ExBook@value@TypeSix}};
-            
-            \if@online
-                \node[anchor=south, align=center] at ([yshift=5.5cm, xshift=3.8cm]current page.south west) {\color{white!61.8}\fontsize{14pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
-                \fill[themeColor!61.8, opacity=0.382, rounded corners=6pt] ([yshift=4.5cm, xshift=0.80cm]current page.south west) rectangle ++(7cm,1cm);
-                \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=4.5cm]current page.south west) {\color{white!61.8}\fontsize{16pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
-            \fi
-        \end{tikzpicture}
-
-        \else
-            \begin{tikzpicture}[remember picture, overlay]
-                \node[anchor=north, inner sep=0pt](image) at ([xshift=10cm, yshift=0cm]current page.north west) {\includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{\ExBook@value@coverImg}};
-        
-                \fill[themeColor!6.2] ([yshift=0cm]current page.west) rectangle ++(\paperwidth,2cm);
-                \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=1cm, xshift=1cm]current page.west) {\color{themeColor} \fontsize{24pt}{0}{\textbf{\ExBook@value@PreTitle}}};
-                \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-1cm, xshift=1cm]current page.west) {\fontsize{32pt}{0}{\textbf{\kaishu \ExBook@value@Title}}};
-                \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-2.8cm, xshift=1cm]current page.west) {\fontsize{28pt}{0}{\textbf{\ExBook@value@TitleDescription}}};
-                \fill[themeColor!6.2] (current page.south west) rectangle ++(\paperwidth,2cm);
-                \node[anchor=south, align=center] at ([yshift=0.8cm]current page.south) {\color{themeColor}\fontsize{16pt}{0}{\ExBook@value@Creator}};
-                \node[anchor=south, align=center] at ([yshift=0.2cm]current page.south) {\color{themeColor}\fontsize{12pt}{0}{\ExBook@value@UpdateTime}};
-
-                \node[anchor=south, align=center] at ([yshift=2.4cm]current page.south) {\color{themeColor}\fontsize{12pt}{0}{\ExBook@value@motto}};
-            
-                \fill[themeColor!6.2, rounded corners=12pt] ([yshift=3.5cm, xshift=15.0cm]current page.south west) rectangle ++(3.5cm,1.5cm);
-                \node[anchor=south, align=center] at ([yshift=3.8cm, xshift=16.8cm]current page.south west) {\color{themeColor}\fontsize{16pt}{0}\textbf{\ExBook@value@TypeSix}};
-                
-                \if@online
-                    \node[anchor=south, align=center] at ([yshift=5.5cm, xshift=3.8cm]current page.south west) {\color{themeColor}\fontsize{14pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
-                    \fill[themeColor!6.2, rounded corners=6pt] ([yshift=4.5cm, xshift=0.80cm]current page.south west) rectangle ++(7cm,1cm);
-                    \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=4.5cm]current page.south west) {\color{themeColor}\fontsize{16pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
-                \fi
-            \end{tikzpicture}
-        \fi
-        
-    \end{titlepage}
-    }
-
-    \pagestyle{fancy}
-    \fancyhf{} % 清空当前设置
-
-    \renewcommand{\headrulewidth}{0pt} % 移除页眉底部的横线
-    \renewcommand{\footrulewidth}{0pt} % 页面底部横线 \faWeixin{}
-    \newcommand{\myrecttext}{\fontsize{14}{0} \textbf{\ExBook@value@LheadC \ExBook@value@Chead \ExBook@value@Rhead}}
-    \newcommand{\myrecttextolus}{\fontsize{14}{0}\heiti \leftmark}
-    \newcommand{\myrecttexttwo}{\fontsize{8pt}{0}{\textbf{  \kaishu  \truncate{4cm}{\leftmark}}}}
-    \newcommand{\myrecttextthree}{\fontsize{8pt}{0}{\textbf{ \kaishu \truncate{4cm}{\rightmark}}}}
-    
-    \if@notocnum
-        \renewcommand{\sectionmark}[1]{\markboth{#1}{}}
-        \renewcommand{\subsectionmark}[1]{\markright{#1}{}}
-    \else
-        \renewcommand{\sectionmark}[1]{\markboth{\thesection #1}{}}
-        \renewcommand{\subsectionmark}[1]{\markright{\thesubsection #1}{}}
-    \fi
-
-    % 在每页的页眉位置添加矩形
-    \chead{%
-    \if@darkmode
-    \begin{tikzpicture}[remember picture,overlay]
-        \fill[themeColor, opacity=0.382] (current page.north west) rectangle ++(0.668\paperwidth,-0.8cm);
-        \node[anchor=north west, text width=\paperwidth, text height=0.4cm, align=left] at ([xshift=0.0em]current page.north west) {%
-        \textcolor{white}{\myrecttext}
-        };
-        
-        \fill[themeColor!61.2, opacity=0.382] ([xshift=-0.332\paperwidth]current page.north east) rectangle ++(0.217\paperwidth,-0.8cm);
-        \node[anchor=north west, text width=\paperwidth, text height=0.16cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
-        \textcolor{white!61.8}{\myrecttexttwo}
-        };
-        \node[anchor=north west, text width=\paperwidth, text height=0.52cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
-        \textcolor{white!61.8}{\myrecttextthree}
-        };
-
-        \fill[themeColor, opacity=0.382] ([xshift=-0.115\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \node[anchor=east, text=white, text height=1.2cm] at (current page.north east) {};
-
-        \fill[themeColor!60, opacity=0.382] ([xshift=-0.075\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \node[anchor=east, text=white, text height=1.2cm] at (current page.north east) {};
-
-        \fill[themeColor!20, opacity=0.382] ([xshift=-0.024\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \node[anchor=east, text=white, text height=1.2cm] at (current page.north east) {};
-
-        \draw[line width=1.5pt, color=themeColor] (current page.north west) ++(0,-0.8cm) -- ++(\paperwidth,0);
-
-        \node[anchor=east, text height=1.2cm, font=\small] at ([xshift=-8.5cm, yshift=1.5cm]current page.south east) {\color{white!61.8}  第 \thepage 页  / 共 \pageref{LastPage} 页};
-    \end{tikzpicture}
-    \else
-    \begin{tikzpicture}[remember picture,overlay]
-        \fill[themeColor] (current page.north west) rectangle ++(0.668\paperwidth,-0.8cm);
-        \node[anchor=north west, text width=\paperwidth, text height=0.4cm, align=left] at ([xshift=0.0em]current page.north west) {%
-        \textcolor{white}{\myrecttext}
-        };
-        
-        \fill[themeColor!6.2] ([xshift=-0.332\paperwidth]current page.north east) rectangle ++(0.23\paperwidth,-0.8cm);
-        \node[anchor=north west, text width=\paperwidth, text height=0.16cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
-        \textcolor{themeColor}{\myrecttexttwo}
-        };
-        \node[anchor=north west, text width=\paperwidth, text height=0.52cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
-        \textcolor{themeColor}{\myrecttextthree}
-        };
-
-        \fill[themeColor] ([xshift=-0.115\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \node[anchor=east, text=white, text height=1.2cm] at (current page.north east) {};
-
-        \fill[themeColor!60] ([xshift=-0.075\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \node[anchor=east, text=white, text height=1.2cm] at (current page.north east) {};
-
-        \fill[themeColor!20] ([xshift=-0.024\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \node[anchor=east, text=white, text height=1.2cm] at (current page.north east) {};
-
-        \draw[line width=1.5pt, color=themeColor] (current page.north west) ++(0,-0.8cm) -- ++(\paperwidth,0);
-
-        \node[anchor=east, text height=1.2cm, font=\small] at ([xshift=-8.5cm, yshift=1.5cm]current page.south east) {\color{themeColor}  第 \thepage 页  / 共 \pageref{LastPage} 页};
-    \end{tikzpicture}
-    \fi
-    
-    }
-    
-    \newenvironment{bbox}
-    {
-        \begingroup
-    }
-    {
-        \if@water
-        \begin{tikzpicture}[overlay,remember picture]
-            \node[anchor=east, opacity=0.08] at ([xshift=-1.2cm, yshift=4.8cm]current page.south east)  {\includegraphics[width=0.16\textwidth]{\ExBook@value@waterImg}}; 
-        \end{tikzpicture}
-        \fi
-        \endgroup
-        \newpage % 在环境结束时插入新页面
-    }
-
 \fi
 
 %                         *****************
