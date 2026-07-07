@@ -113,12 +113,25 @@
  %                         ** 主题颜色设置  **
  %                         *****************
 
-% 设置颜色变量
+% 主题色统一以 exbook@ 前缀注册，新增主题只需在此加一行 \definecolor
+\definecolor{exbook@blue}{HTML}{015697}   % 经典·蓝
+\definecolor{exbook@green}{HTML}{01847c}  % 经典·绿
+\definecolor{exbook@purple}{HTML}{61589b} % 经典·紫
+\definecolor{exbook@orange}{HTML}{EA4C0E} % 经典·橙
+\definecolor{exbook@infj}{HTML}{3b4676}   % 个性·infj
+\definecolor{exbook@enfp}{HTML}{d58a05}   % 个性·enfp
+\definecolor{exbook@infp}{HTML}{3b6079}   % 个性·infp
+\definecolor{exbook@esfp}{HTML}{d86b09}   % 个性·esfp
+\definecolor{exbook@intj}{HTML}{38558f}   % 个性·intj
+\definecolor{exbook@entp}{HTML}{8c2b2b}   % 个性·entp
+\definecolor{exbook@isfj}{HTML}{4d417e}   % 个性·isfj
+\definecolor{exbook@enfj}{HTML}{e15715}   % 个性·enfj
+
+% 兼容旧配置的 \setThemeColor{\blue} 写法：这些宏展开为主题名字符串
 \newcommand{\blue}{blue}
 \newcommand{\green}{green}
 \newcommand{\purple}{purple}
 \newcommand{\orange}{orange}
-
 \newcommand{\infj}{infj}
 \newcommand{\enfp}{enfp}
 \newcommand{\infp}{infp}
@@ -127,86 +140,40 @@
 \newcommand{\entp}{entp}
 \newcommand{\isfj}{isfj}
 \newcommand{\enfj}{enfj}
- 
-% 设置颜色命令
+
+% 切换主题：\setThemeColor{blue} 与 \setThemeColor{\blue} 均可，
+% 按名字查找 exbook@<主题名>，未注册的主题名回退到蓝色
 \newcommand{\setThemeColor}[1]{%
-    \ifx#1\blue
-    \definecolor{themeColor}{HTML}{015697} % 自定义颜色 蓝色
+    \begingroup
+    \edef\exbook@theme{#1}%
+    \ifcsname\string\color@exbook@\exbook@theme\endcsname
+        \edef\exbook@do{\endgroup\noexpand\colorlet{themeColor}{exbook@\exbook@theme}}%
     \else
-    \ifx#1\green
-    \definecolor{themeColor}{HTML}{01847c} % 自定义颜色 绿色
-    \else
-    \ifx#1\purple
-    \definecolor{themeColor}{HTML}{61589b} % 自定义颜色 紫色
-    \else
-    \ifx#1\orange
-    \definecolor{themeColor}{HTML}{EA4C0E} % 自定义颜色 橙色
-    \else
-    \ifx#1\infj
-    \definecolor{themeColor}{HTML}{3b4676} % 自定义颜色 infj
-    \else
-    \ifx#1\enfp
-    \definecolor{themeColor}{HTML}{d58a05} % 自定义颜色 enfp
-    \else
-    \ifx#1\infp
-    \definecolor{themeColor}{HTML}{3b6079} % 自定义颜色 infp
-    \else
-    \ifx#1\esfp
-    \definecolor{themeColor}{HTML}{d86b09} % 自定义颜色 esfp
-    \else
-    \ifx#1\intj
-    \definecolor{themeColor}{HTML}{38558f} % 自定义颜色 intj
-    \else
-    \ifx#1\entp
-    \definecolor{themeColor}{HTML}{8c2b2b} % 自定义颜色 entp
-    \else
-    \ifx#1\isfj
-    \definecolor{themeColor}{HTML}{4d417e} % 自定义颜色 isfj
-    \else
-    \ifx#1\enfj
-    \definecolor{themeColor}{HTML}{e15715} % 自定义颜色 enfj
-    \else
-    \definecolor{themeColor}{HTML}{015697} % 自定义颜色 蓝色
+        \def\exbook@do{\endgroup\colorlet{themeColor}{exbook@blue}}%
     \fi
-    \fi
-    \fi
-    \fi
-    \fi
-    \fi
-    \fi
-    \fi
-    \fi
-    \fi
-    \fi
-    \fi
+    \exbook@do
 }
+
+% 默认主题（未调用 \setThemeColor 时也可直接编译）
+\colorlet{themeColor}{exbook@blue}
 
 \definecolor{bg}{HTML}{212121} % 自定义颜色 
 
+% listings代码样式（深色模式下仅背景色不同）
 \if@darkmode
-% listings代码样式
-\lstset{
-    language=C, % 设置默认语言
-    breaklines=true, % 自动换行
-    basicstyle=\ttfamily, 
-    backgroundcolor=\color{bg!61.8}, 
-    frame=none, 
-    showspaces=false, 
-    showstringspaces=false,
-    escapeinside={(*@}{@*)}, % 设置逃逸字符
-}
+    \def\exbook@lstbg{bg!61.8}
 \else
-% listings代码样式
+    \def\exbook@lstbg{themeColor!6.2}
+\fi
 \lstset{
     language=C, % 设置默认语言
     breaklines=true, % 自动换行
-    basicstyle=\ttfamily, 
-    backgroundcolor=\color{themeColor!6.2}, 
-    showspaces=false, 
+    basicstyle=\ttfamily,
+    backgroundcolor=\color{\exbook@lstbg},
+    showspaces=false,
     showstringspaces=false,
     escapeinside={(*@}{@*)}, % 设置逃逸字符
 }
-\fi
 
 
 
