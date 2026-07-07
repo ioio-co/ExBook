@@ -34,11 +34,11 @@
 \newif\if@notocnum  \@notocnumfalse
 \DeclareOption{notocnum}{\@notocnumtrue}
 
-% 是否显示章节序号
+% 是否启用深色模式
 \newif\if@darkmode  \@darkmodefalse
 \DeclareOption{darkmode}{\@darkmodetrue}
 
-% 是否显示章节序号
+% 是否显示页脚标签
 \newif\if@showmark  \@showmarkfalse
 \DeclareOption{showmark}{\@showmarktrue}
 
@@ -1076,6 +1076,7 @@
 \newlength{\choicelengthc}
 \newlength{\choicelengthd}
 \newlength{\choicelengthe}
+\newlength{\choicelengthf}
 \newlength{\maxlength}
 
 % 三个选项
@@ -1197,8 +1198,7 @@
 			\end{tabularx}
 		}
 	}%
-	\unskip \unskip (
-)   
+	\unskip \unskip
 % \fi
 }
 
@@ -1210,9 +1210,12 @@
 	\settowidth{\choicelengthc}{\@optprefix C\@optsuffix~#3~~~}
 	\settowidth{\choicelengthd}{\@optprefix D\@optsuffix~#4~~~}
 	\settowidth{\choicelengthe}{\@optprefix E\@optsuffix~#5~~~}
-	\ifthenelse{\lengthtest{\choicelengtha>\choicelengthb}}{\setlength{\maxlength}{\choicelengtha}}{\setlength{\maxlength}{\choice(l)ngthb}}
+	\settowidth{\choicelengthf}{\@optprefix F\@optsuffix~#6~~~}
+	\ifthenelse{\lengthtest{\choicelengtha>\choicelengthb}}{\setlength{\maxlength}{\choicelengtha}}{\setlength{\maxlength}{\choicelengthb}}
 	\ifthenelse{\lengthtest{\choicelengthc>\maxlength}}{\setlength{\maxlength}{\choicelengthc}}{}
-	\ifthenelse{\lengthtest{\choicelengthd>\maxlength}}{\setlength{\maxlength}{\choicelengthd}}{}	\ifthenelse{\lengthtest{\choicelengthe>\maxlength}}{\setlength{\maxlength}{\choicelengthe}}{}
+	\ifthenelse{\lengthtest{\choicelengthd>\maxlength}}{\setlength{\maxlength}{\choicelengthd}}{}
+	\ifthenelse{\lengthtest{\choicelengthe>\maxlength}}{\setlength{\maxlength}{\choicelengthe}}{}
+	\ifthenelse{\lengthtest{\choicelengthf>\maxlength}}{\setlength{\maxlength}{\choicelengthf}}{}
 	
 	\ifthenelse{\lengthtest{\maxlength>0.4\linewidth}}
 	{
@@ -1240,13 +1243,12 @@
 			\begin{tabularx}{\linewidth}{XXXX}
 				\setlength\tabcolsep{0pt}
 				\@optprefix A\@optsuffix~#1~~~  & \@optprefix B\@optsuffix~#2~~~ & \@optprefix C\@optsuffix~#3~~~ & \@optprefix D\@optsuffix~#4~~~ \\
-				\@optprefix E\@optsuffix~#2~~~  & \@optprefix F\@optsuffix~#6~~~ &          &          \\
+				\@optprefix E\@optsuffix~#5~~~  & \@optprefix F\@optsuffix~#6~~~ &          &          \\
 			\end{tabularx}
 		}%
 	}
-	\unskip \unskip(
-)  
-%  \fi 
+	\unskip \unskip
+%  \fi
 }
 
 %                         *************************
