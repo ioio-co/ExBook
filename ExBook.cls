@@ -1034,186 +1034,78 @@
 % 定义新增小问命令
 \newcommand{\subqitem}{\item} 
 
-% 选择题选项自动排版参考了 BHCexam.cls 的实现
-\newlength{\choicelengtha}
-\newlength{\choicelengthb}
-\newlength{\choicelengthc}
-\newlength{\choicelengthd}
-\newlength{\choicelengthe}
-\newlength{\choicelengthf}
-\newlength{\maxlength}
+% 选择题选项自动排版（参考了 BHCexam.cls 的实现）：
+% 测量最宽选项后按每行 1 / 2 / 4 个自动布局。
+% \choices{{选项1},{选项2},...} 支持任意数量的选项（选项内含逗号时需用花括号包裹），
+% \threechoices ~ \sixchoices 为固定数量选项的便捷写法。
 
-% 三个选项
-\newcommand{\threechoices}[3]{
+\newcounter{exbook@choiceidx}
+\newlength{\exbook@choicewd}
+\newlength{\exbook@choicemax}
+\newcount\exbook@choicecol
+
+% 单个选项单元格：#1 选项字母 #2 选项内容
+\newcommand{\exbook@choicecell}[2]{\@optprefix #1\@optsuffix~#2~~~}
+
+% 把当前选项追加到表体：先展开选项内容，再展开选项字母
+\newcommand{\exbook@choiceadd}{\expandafter\exbook@choiceadd@a\expandafter{\exbook@opt}}
+\newcommand{\exbook@choiceadd@a}[1]{\expandafter\exbook@choiceadd@b\expandafter{\exbook@lbl}{#1}}
+\newcommand{\exbook@choiceadd@b}[2]{\appto\exbook@choicebody{\exbook@choicecell{#1}{#2}}}
+
+% 排版核心：#1 为逗号分隔的选项列表
+\newcommand{\exbook@choices}[1]{%
     \par
-	\settowidth{\choicelengtha}{\@optprefix A\@optsuffix~#1~~~}
-	\settowidth{\choicelengthb}{\@optprefix B\@optsuffix~#2~~~}
-	\settowidth{\choicelengthc}{\@optprefix C\@optsuffix~#3~~~}
-
-	\ifthenelse{\lengthtest{\choicelengtha>\choicelengthb}}{\setlength{\maxlength}{\choicelengtha}}{\setlength{\maxlength}{\choicelengthb}}
-	\ifthenelse{\lengthtest{\choicelengthc>\maxlength}}{\setlength{\maxlength}{\choicelengthc}}{}
-	\ifthenelse{\lengthtest{\maxlength>0.4\linewidth}}
-	{
-		\begin{tabularx}{\linewidth}{X}
-			\setlength\tabcolsep{0pt}
-			\@optprefix A\@optsuffix~#1~~~\\
-			\@optprefix B\@optsuffix~#2~~~\\
-			\@optprefix C\@optsuffix~#3~~~\\
-		\end{tabularx}
-	}%
-	{
-		\ifthenelse{\lengthtest{\maxlength>0.2\linewidth}}
-		{
-			\begin{tabularx}{\linewidth}{XX}
-				\setlength\tabcolsep{0pt}
-				\@optprefix A\@optsuffix~#1~~~ & \@optprefix B\@optsuffix~#2~~~\\
-				\@optprefix C\@optsuffix~#3~~~ & \\
-			\end{tabularx}
-		}%
-		{
-			\begin{tabularx}{\linewidth}{XXXX}
-				\setlength\tabcolsep{0pt}
-				\@optprefix A\@optsuffix~#1~~~  & \@optprefix B\@optsuffix~#2~~~ & \@optprefix C\@optsuffix~#3~~~ &\\ 
-			\end{tabularx}
-		}
-	}
-	\unskip \unskip 
-    % \fi
+    % 第一遍循环：测量最宽的选项
+    \setlength{\exbook@choicemax}{0pt}%
+    \setcounter{exbook@choiceidx}{0}%
+    \@for\exbook@opt:=#1\do{%
+        \stepcounter{exbook@choiceidx}%
+        \settowidth{\exbook@choicewd}{\exbook@choicecell{\Alph{exbook@choiceidx}}{\exbook@opt}}%
+        \ifdim\exbook@choicewd>\exbook@choicemax
+            \setlength{\exbook@choicemax}{\exbook@choicewd}%
+        \fi}%
+    % 根据最宽选项决定每行选项数
+    \ifdim\exbook@choicemax>0.4\linewidth
+        \def\exbook@percol{1}%
+    \else\ifdim\exbook@choicemax>0.2\linewidth
+        \def\exbook@percol{2}%
+    \else
+        \def\exbook@percol{4}%
+    \fi\fi
+    % 第二遍循环：构造表格内容
+    \def\exbook@choicebody{}%
+    \setcounter{exbook@choiceidx}{0}%
+    \exbook@choicecol=0\relax
+    \@for\exbook@opt:=#1\do{%
+        \stepcounter{exbook@choiceidx}%
+        \edef\exbook@lbl{\Alph{exbook@choiceidx}}%
+        \exbook@choiceadd
+        \advance\exbook@choicecol\@ne
+        \ifnum\exbook@choicecol=\exbook@percol\relax
+            \appto\exbook@choicebody{\\}%
+            \exbook@choicecol=0\relax
+        \else
+            \appto\exbook@choicebody{&}%
+        \fi}%
+    \ifnum\exbook@choicecol>0
+        \appto\exbook@choicebody{\\}%
+    \fi
+    % 输出表格
+    \ifcase\exbook@percol\relax\or
+        \begin{tabularx}{\linewidth}{X}\exbook@choicebody\end{tabularx}\or
+        \begin{tabularx}{\linewidth}{XX}\exbook@choicebody\end{tabularx}\or\or
+        \begin{tabularx}{\linewidth}{XXXX}\exbook@choicebody\end{tabularx}\fi
+    \unskip \unskip
 }
 
-% 四个选项
-\newcommand{\fourchoices}[4]{
-    \par
-	\settowidth{\choicelengtha}{\@optprefix A\@optsuffix~#1~~~}
-	\settowidth{\choicelengthb}{\@optprefix B\@optsuffix~#2~~~}
-	\settowidth{\choicelengthc}{\@optprefix C\@optsuffix~#3~~~}
-	\settowidth{\choicelengthd}{\@optprefix D\@optsuffix~#4~~~}
-	\ifthenelse{\lengthtest{\choicelengtha>\choicelengthb}}{\setlength{\maxlength}{\choicelengtha}}{\setlength{\maxlength}{\choicelengthb}}
-	\ifthenelse{\lengthtest{\choicelengthc>\maxlength}}{\setlength{\maxlength}{\choicelengthc}}{}
-	\ifthenelse{\lengthtest{\choicelengthd>\maxlength}}{\setlength{\maxlength}{\choicelengthd}}{}
-	\ifthenelse{\lengthtest{\maxlength>0.4\linewidth}}
-	{
-		\begin{tabularx}{\linewidth}{X}
-			\setlength\tabcolsep{0pt}
-			\@optprefix A\@optsuffix~#1~~~\\
-			\@optprefix B\@optsuffix~#2~~~\\
-			\@optprefix C\@optsuffix~#3~~~\\
-			\@optprefix D\@optsuffix~#4~~~\\
-		\end{tabularx}
-	}%
-	{
-		\ifthenelse{\lengthtest{\maxlength>0.2\linewidth}}
-		{
-			\begin{tabularx}{\linewidth}{XX}
-				\setlength\tabcolsep{0pt}
-				\@optprefix A\@optsuffix~#1~~~ & \@optprefix B\@optsuffix~#2~~~\\
-				\@optprefix C\@optsuffix~#3~~~ & \@optprefix D\@optsuffix~#4~~~\\
-			\end{tabularx}
-		}%
-		{
-			\begin{tabularx}{\linewidth}{XXXX}
-				\setlength\tabcolsep{0pt}
-				\@optprefix A\@optsuffix~#1~~~  & \@optprefix B\@optsuffix~#2~~~ & \@optprefix C\@optsuffix~#3~~~ & \@optprefix D\@optsuffix~#4~~~\\ 
-				% A.~#1~~~  & B.~#2~~~ & C.~#3~~~ & D.~#4~~~\\ 
-			\end{tabularx}
-		}%
-	}
-	\unskip \unskip 
-    % \fi
-}
+% 任意数量选项
+\newcommand{\choices}[1]{\exbook@choices{#1}}
 
-% 五个选项
-\newcommand{\fivechoices}[5]{
-    \par
-	\settowidth{\choicelengtha}{\@optprefix A\@optsuffix~#1~~~}
-	\settowidth{\choicelengthb}{\@optprefix B\@optsuffix~#2~~~}
-	\settowidth{\choicelengthc}{\@optprefix C\@optsuffix~#3~~~}
-	\settowidth{\choicelengthd}{\@optprefix D\@optsuffix~#4~~~}
-	\settowidth{\choicelengthe}{\@optprefix E\@optsuffix~#5~~~}
-	\ifthenelse{\lengthtest{\choicelengtha>\choicelengthb}}{\setlength{\maxlength}{\choicelengtha}}{\setlength{\maxlength}{\choicelengthb}}
-	\ifthenelse{\lengthtest{\choicelengthc>\maxlength}}{\setlength{\maxlength}{\choicelengthc}}{}
-	\ifthenelse{\lengthtest{\choicelengthd>\maxlength}}{\setlength{\maxlength}{\choicelengthd}}{}
-	\ifthenelse{\lengthtest{\choicelengthe>\maxlength}}{\setlength{\maxlength}{\choicelengthe}}{}
-	\ifthenelse{\lengthtest{\maxlength>0.4\linewidth}}{
-		\begin{tabularx}{\linewidth}{X}
-			\setlength\tabcolsep{0pt}
-			\@optprefix A\@optsuffix~#1~~~\\
-			\@optprefix B\@optsuffix~#2~~~\\
-			\@optprefix C\@optsuffix~#3~~~\\
-			\@optprefix D\@optsuffix~#4~~~\\
-			\@optprefix E\@optsuffix~#5~~~\\
-		\end{tabularx}
-	}%
-	{
-		\ifthenelse{\lengthtest{\maxlength>0.2\linewidth}}
-		{
-			\begin{tabularx}{\linewidth}{XX}
-				\setlength\tabcolsep{0pt}
-				\@optprefix A\@optsuffix~#1~~~ & \@optprefix B\@optsuffix~#2~~~\\
-				\@optprefix C\@optsuffix~#3~~~ & \@optprefix D\@optsuffix~#4~~~\\
-				\@optprefix E\@optsuffix~#5~~~ &         \\
-			\end{tabularx}
-		}%
-		{
-			\begin{tabularx}{\linewidth}{XXXX}
-				\setlength\tabcolsep{0pt}
-				\@optprefix A\@optsuffix~#1~~~  & \@optprefix B\@optsuffix~#2~~~ & \@optprefix C\@optsuffix~#3~~~ & \@optprefix D\@optsuffix~#4~~~ \\
-				\@optprefix E\@optsuffix~#5~~~  &          &          &          \\
-			\end{tabularx}
-		}
-	}%
-	\unskip \unskip
-% \fi
-}
-
-% 六个选项
-\newcommand{\sixchoices}[6]{
-    \par
-	\settowidth{\choicelengtha}{\@optprefix A\@optsuffix~#1~~~}
-	\settowidth{\choicelengthb}{\@optprefix B\@optsuffix~#2~~~}
-	\settowidth{\choicelengthc}{\@optprefix C\@optsuffix~#3~~~}
-	\settowidth{\choicelengthd}{\@optprefix D\@optsuffix~#4~~~}
-	\settowidth{\choicelengthe}{\@optprefix E\@optsuffix~#5~~~}
-	\settowidth{\choicelengthf}{\@optprefix F\@optsuffix~#6~~~}
-	\ifthenelse{\lengthtest{\choicelengtha>\choicelengthb}}{\setlength{\maxlength}{\choicelengtha}}{\setlength{\maxlength}{\choicelengthb}}
-	\ifthenelse{\lengthtest{\choicelengthc>\maxlength}}{\setlength{\maxlength}{\choicelengthc}}{}
-	\ifthenelse{\lengthtest{\choicelengthd>\maxlength}}{\setlength{\maxlength}{\choicelengthd}}{}
-	\ifthenelse{\lengthtest{\choicelengthe>\maxlength}}{\setlength{\maxlength}{\choicelengthe}}{}
-	\ifthenelse{\lengthtest{\choicelengthf>\maxlength}}{\setlength{\maxlength}{\choicelengthf}}{}
-	
-	\ifthenelse{\lengthtest{\maxlength>0.4\linewidth}}
-	{
-		\begin{tabularx}{\linewidth}{X}
-			\setlength\tabcolsep{0pt}
-			\@optprefix A\@optsuffix~#1~~~\\
-			\@optprefix B\@optsuffix~#2~~~\\
-			\@optprefix C\@optsuffix~#3~~~\\
-			\@optprefix D\@optsuffix~#4~~~\\
-			\@optprefix E\@optsuffix~#5~~~\\
-			\@optprefix F\@optsuffix~#6~~~\\
-		\end{tabularx}
-	}%
-	{
-		\ifthenelse{\lengthtest{\maxlength>0.2\linewidth}}
-		{
-			\begin{tabularx}{\linewidth}{XX}
-				\setlength\tabcolsep{0pt}
-				\@optprefix A\@optsuffix~#1~~~ & \@optprefix B\@optsuffix~#2~~~\\
-				\@optprefix C\@optsuffix~#3~~~ & \@optprefix D\@optsuffix~#4~~~\\
-				\@optprefix E\@optsuffix~#5~~~ & \@optprefix F\@optsuffix~#6~~~\\
-			\end{tabularx}
-		}%
-		{
-			\begin{tabularx}{\linewidth}{XXXX}
-				\setlength\tabcolsep{0pt}
-				\@optprefix A\@optsuffix~#1~~~  & \@optprefix B\@optsuffix~#2~~~ & \@optprefix C\@optsuffix~#3~~~ & \@optprefix D\@optsuffix~#4~~~ \\
-				\@optprefix E\@optsuffix~#5~~~  & \@optprefix F\@optsuffix~#6~~~ &          &          \\
-			\end{tabularx}
-		}%
-	}
-	\unskip \unskip
-%  \fi
-}
+% 固定数量选项
+\newcommand{\threechoices}[3]{\exbook@choices{{#1},{#2},{#3}}}
+\newcommand{\fourchoices}[4]{\exbook@choices{{#1},{#2},{#3},{#4}}}
+\newcommand{\fivechoices}[5]{\exbook@choices{{#1},{#2},{#3},{#4},{#5}}}
+\newcommand{\sixchoices}[6]{\exbook@choices{{#1},{#2},{#3},{#4},{#5},{#6}}}
 
 %                         *************************
 %                         **   章节标题与目录显示   **
