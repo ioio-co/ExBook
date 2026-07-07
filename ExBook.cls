@@ -67,7 +67,7 @@
 \RequirePackage{xcolor,graphicx,caption} % 彩色、图片、图释
 \RequirePackage{geometry,fancyhdr} % 纸张、边距、页眉、页脚
 \RequirePackage{etoolbox} 
-\RequirePackage{amsmath,amsmath,amssymb} % ams数学相关
+\RequirePackage{amsmath,amssymb} % ams数学相关
 \RequirePackage{fourier}
 % \RequirePackage{mathpazo}
 % \RequirePackage{mathptmx}
@@ -82,17 +82,14 @@
 \RequirePackage{titlesec} % 标题
 \RequirePackage{hyperref}
 \RequirePackage{afterpage} 
-\RequirePackage{zhnumber} 
-\RequirePackage{fontspec} 
-\RequirePackage{pifont} 
-\RequirePackage{lastpage} 
-\RequirePackage{titling} 
-\RequirePackage{adjustbox} 
-\RequirePackage{fontawesome5} 
-\RequirePackage{multicol} 
-\RequirePackage{bm} 
-\RequirePackage{fontawesome5} 
-\RequirePackage{graphicx} 
+\RequirePackage{zhnumber}
+\RequirePackage{fontspec}
+\RequirePackage{lastpage}
+\RequirePackage{titling}
+\RequirePackage{adjustbox}
+\RequirePackage{fontawesome5}
+\RequirePackage{multicol}
+\RequirePackage{bm}
 \RequirePackage{pgffor}    % 用于循环
 \RequirePackage{xkeyval}
 \RequirePackage{pgfmath} % 导入随机数生成包
@@ -219,7 +216,7 @@
 \def\ExBook@value@TitleDescription{\textbf{此处填写副标题}}
 \def\ExBook@value@TypeOne{\textbf{A4紧凑版}}
 \def\ExBook@value@TypeTwo{\textbf{A4标准版}}
-\def\ExBoo(k)value@TypeThree{\textbf{横版Pad版}}
+\def\ExBook@value@TypeThree{\textbf{横版Pad版}}
 \def\ExBook@value@TypeFour{\textbf{A4宽松版}}
 \def\ExBook@value@TypeFive{\textbf{A4单题版}}
 \def\ExBook@value@TypeSix{\textbf{竖版Pad版}}
