@@ -33,7 +33,7 @@
 
 ## 二、瘦身（死代码与无用依赖）
 
-### 🟡 4. 约 10 个宏包加载后从未使用
+### ~~🟡 4. 约 10 个宏包加载后从未使用~~（已完成）
 经逐包核查，以下宏包在 `ExBook.cls` 与示例文档中均无对应命令出现：
 `afterpage`、`zhnumber`、`adjustbox`、`multicol`、`bm`、`romannum`、
 `bbding`、`titling`、`caption`、`ifthen`（选择题重构后 `\ifthenelse` 已不再使用）。
@@ -41,11 +41,11 @@
 `fontawesome5` 仅 `contents/print.tex` 在用，可下放到文档层。
 删减后可加快编译、减少包冲突面（删前建议用编译矩阵回归一遍）。
 
-### 🟡 5. `\@pageformat` 是死代码
+### ~~🟡 5. `\@pageformat` 是死代码~~（已完成）
 六个 `\DeclareOption` 都给它赋值，但整个类中没有任何地方读取它，
 版式分派完全依赖 `\myPageFormat`。二选一即可。
 
-### 🟢 6. `\hideheaderfooter` 每次调用都重新定义 pagestyle
+### ~~🟢 6. `\hideheaderfooter` 每次调用都重新定义 pagestyle~~（已完成）
 `\fancypagestyle{emptyheaderfooter}{...}` 应在类载入时定义一次，
 命令本身只保留 `\thispagestyle{emptyheaderfooter}`。
 
@@ -142,5 +142,5 @@ Linux 及部分精简 TeX 环境没有该字体，编译直接失败（本次重
 |---|---|---|
 | ~~第一批~~ | ~~1、2、3~~ | ✅ 已完成（13 也一并解决） |
 | ~~第二批~~ | ~~16、17~~ | ✅ 已完成（12 为支持 CI 一并修复；16 遗留示例 PDF 待作者决定） |
-| 第三批 | 4、5、6 | 瘦身与健壮性，回归成本低 |
-| 按需 | 其余 | 视维护意愿与时间 |
+| ~~第三批~~ | ~~4、5、6~~ | ✅ 已完成 |
+| 按需 | 7、8、9、10、11、14、15、18、19、20、21、22 | 视维护意愿与时间 |

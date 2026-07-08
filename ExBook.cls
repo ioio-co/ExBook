@@ -42,17 +42,15 @@
 \newif\if@showmark  \@showmarkfalse
 \DeclareOption{showmark}{\@showmarktrue}
 
-% 定义默认页面格式
-\def\@pageformat{standard}
+% 页面格式编号（默认 standard）：0 compact、1 standard、2 padl、
+% 3 loose、4 single、5 padp
 \newcommand{\myPageFormat}{1}
-
-% 定义选项，每个选项对应一个字符串值，并设置 \myPageFormat 的值
-\DeclareOption{compact}{\def\@pageformat{compact}\def\myPageFormat{0}}  
-\DeclareOption{standard}{\def\@pageformat{standard}\def\myPageFormat{1}} 
-\DeclareOption{padl}{\def\@pageformat{padl}\def\myPageFormat{2}}  
-\DeclareOption{loose}{\def\@pageformat{loose}\def\myPageFormat{3}}  
-\DeclareOption{single}{\def\@pageformat{single}\def\myPageFormat{4}}  
-\DeclareOption{padp}{\def\@pageformat{padp}\def\myPageFormat{5}}  
+\DeclareOption{compact}{\def\myPageFormat{0}}
+\DeclareOption{standard}{\def\myPageFormat{1}}
+\DeclareOption{padl}{\def\myPageFormat{2}}
+\DeclareOption{loose}{\def\myPageFormat{3}}
+\DeclareOption{single}{\def\myPageFormat{4}}
+\DeclareOption{padp}{\def\myPageFormat{5}}
 
 % 加载基础类
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
@@ -63,37 +61,26 @@
 %                    **        加载宏包       **
 %                    *****************************
 \RequirePackage[fontset = \@fontset, punct=kaiming,zihao=-4]{ctex}
-\RequirePackage{tabularx, ifthen} % 排选项用
-\RequirePackage{xcolor,graphicx,caption} % 彩色、图片、图释
+\RequirePackage{tabularx} % 排选项用
+\RequirePackage{xcolor,graphicx} % 彩色、图片
 \RequirePackage{geometry,fancyhdr} % 纸张、边距、页眉、页脚
-\RequirePackage{etoolbox} 
+\RequirePackage{etoolbox} % \appto 等工具
 \RequirePackage{amsmath,amssymb} % ams数学相关
-\RequirePackage{fourier}
-% \RequirePackage{mathpazo}
-% \RequirePackage{mathptmx}
-% \RequirePackage{unicode-math}
+\RequirePackage{fourier} % 数学字体
 \RequirePackage{pifont} % 带圈数字\ding
-\RequirePackage{bbding} % 图案
-\RequirePackage{romannum} % 罗马数字
-\RequirePackage{enumitem}
+\RequirePackage{enumitem} % 小问列表
 \RequirePackage{listings} % 代码
-\RequirePackage{tikz} % 绘图
+\RequirePackage{tikz} % 绘图（封面、页眉、水印）
 \RequirePackage{titletoc} % 目录
 \RequirePackage{titlesec} % 标题
 \RequirePackage{hyperref}
-\RequirePackage{afterpage} 
-\RequirePackage{zhnumber}
-\RequirePackage{fontspec}
-\RequirePackage{lastpage}
-\RequirePackage{titling}
-\RequirePackage{adjustbox}
-\RequirePackage{fontawesome5}
-\RequirePackage{multicol}
-\RequirePackage{bm}
-\RequirePackage{pgffor}    % 用于循环
-\RequirePackage{xkeyval}
-\RequirePackage{pgfmath} % 导入随机数生成包
-\RequirePackage{truncate}
+\RequirePackage{fontspec} % \setmainfont、\IfFontExistsTF
+\RequirePackage{lastpage} % 页脚总页数
+\RequirePackage{fontawesome5} % 图标（contents/ 模板页使用）
+\RequirePackage{pgffor} % \foreach 循环
+\RequirePackage{xkeyval} % qitems 键值参数
+\RequirePackage{pgfmath} % \pgfmathsetmacro 随机数
+\RequirePackage{truncate} % 页脚标签截断
 
 \usetikzlibrary{fadings}
 \usetikzlibrary{shapes, positioning}
@@ -246,13 +233,9 @@
 \newcommand{\noreftitle}[1]{\par \textbf{#1} \par} % 无索引标题
 \newcommand{\onlinecheckurl}{\ExBook@value@onlineCheckUrl} % 在线勘误文档地址
 
-% 定义一个只隐藏当前页的页眉和页脚的命令
-\newcommand{\hideheaderfooter}{
-  \fancypagestyle{emptyheaderfooter}{
-    \fancyhf{}  % 清空页眉和页脚
-  }
-  \thispagestyle{emptyheaderfooter}
-}
+% 只隐藏当前页的页眉和页脚
+\fancypagestyle{emptyheaderfooter}{\fancyhf{}}
+\newcommand{\hideheaderfooter}{\thispagestyle{emptyheaderfooter}}
 
 % 对齐方式选择：参数为空则居中，l 左对齐，r 右对齐，其他值居中
 \newcommand{\exbook@align}[1]{%
