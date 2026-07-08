@@ -105,10 +105,19 @@
     \hypersetup {colorlinks=true,linkcolor=black, urlcolor=themeColor, citecolor=red}
 \fi
 % 全局英文字体：优先 Times New Roman，系统缺失时回退到
-% TeX Gyre Termes（texlive 自带的 Times 兼容字体，Linux/CI 下可直接编译）
+% TeX Gyre Termes（texlive 自带的 Times 兼容字体，Linux/CI 下可直接编译）。
+% 回退先按字体名查找（fontconfig），再按文件名查找（kpathsea，
+% 覆盖 tex-gyre 装在 texmf 树而 fontconfig 未收录的情况）
 \IfFontExistsTF{Times New Roman}
     {\setmainfont{Times New Roman}}
-    {\setmainfont{TeX Gyre Termes}}
+    {\IfFontExistsTF{TeX Gyre Termes}
+        {\setmainfont{TeX Gyre Termes}}
+        {\setmainfont{texgyretermes}[
+            Extension = .otf,
+            UprightFont = *-regular,
+            BoldFont = *-bold,
+            ItalicFont = *-italic,
+            BoldItalicFont = *-bolditalic]}}
 
 \renewcommand\arraystretch{1.3}  % 表格行高（选择题选项间距）
 \renewcommand{\baselinestretch}{1.3} % 设置行间距
