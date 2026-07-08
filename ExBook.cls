@@ -42,15 +42,14 @@
 \newif\if@showmark  \@showmarkfalse
 \DeclareOption{showmark}{\@showmarktrue}
 
-% 页面格式编号（默认 standard）：0 compact、1 standard、2 padl、
-% 3 loose、4 single、5 padp
-\newcommand{\myPageFormat}{1}
-\DeclareOption{compact}{\def\myPageFormat{0}}
-\DeclareOption{standard}{\def\myPageFormat{1}}
-\DeclareOption{padl}{\def\myPageFormat{2}}
-\DeclareOption{loose}{\def\myPageFormat{3}}
-\DeclareOption{single}{\def\myPageFormat{4}}
-\DeclareOption{padp}{\def\myPageFormat{5}}
+% 版式名称（默认 standard），类末尾按名字派发到 \exbook@setup@<版式名>
+\newcommand{\exbook@format}{standard}
+\DeclareOption{compact}{\renewcommand{\exbook@format}{compact}}
+\DeclareOption{standard}{\renewcommand{\exbook@format}{standard}}
+\DeclareOption{padl}{\renewcommand{\exbook@format}{padl}}
+\DeclareOption{loose}{\renewcommand{\exbook@format}{loose}}
+\DeclareOption{single}{\renewcommand{\exbook@format}{single}}
+\DeclareOption{padp}{\renewcommand{\exbook@format}{padp}}
 
 % 加载基础类
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
@@ -379,96 +378,102 @@
 %                         **   版式定义   **
 %                         *****************
 
-% padl / padp 共用一套 Pad 版逻辑
-\newif\if@exbookpad
-\ifnum\myPageFormat=2 \@exbookpadtrue\fi
-\ifnum\myPageFormat=5 \@exbookpadtrue\fi
+% 深色 / 浅色模式的差异集中在以下四个定义
+\if@darkmode
+    \tikzset{exbook@pad@dim/.style={opacity=0.382}}% 深色下色块整体减淡
+    \def\exbook@pad@second{themeColor!61.8}% 次要色块颜色
+    \def\exbook@pad@secondwd{0.217}% 页眉次要色块宽度（\paperwidth 的倍数）
+    \def\exbook@pad@text{white!61.8}% 强调文字颜色
+    \pagecolor{bg}% 页面背景颜色
+    \color{white}% 全局文字颜色
+\else
+    \tikzset{exbook@pad@dim/.style={}}
+    \def\exbook@pad@second{themeColor!6.2}
+    \def\exbook@pad@secondwd{0.23}
+    \def\exbook@pad@text{themeColor}
+\fi
 
-\if@exbookpad
-%                         *****************
-%                         **    Pad 版    **
-%                         *****************
-    % 深色 / 浅色模式的差异集中在以下四个定义
+% Pad 版封面：#1 封面图位置 #2 副标题纵向偏移 #3 标识底框位置
+%             #4 标识文字位置 #5 版式标识 #6 在线勘误区块
+\newcommand{\exbook@padcover}[6]{%
+\begin{titlepage}
+    \begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north, inner sep=0pt](image) at ([#1]current page.north west) {\includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{\ExBook@value@coverImg}};
+
+        \fill[fill=\exbook@pad@second, exbook@pad@dim] ([yshift=0cm]current page.west) rectangle ++(\paperwidth,2cm);
+        \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=1cm, xshift=1cm]current page.west) {\color{\exbook@pad@text} \fontsize{24pt}{0}{\textbf{\ExBook@value@PreTitle}}};
+        \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-1cm, xshift=1cm]current page.west) {\fontsize{32pt}{0}{\textbf{\kaishu \ExBook@value@Title}}};
+        \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=#2, xshift=1cm]current page.west) {\fontsize{28pt}{0}{\textbf{\ExBook@value@TitleDescription}}};
+        \fill[fill=\exbook@pad@second, exbook@pad@dim] (current page.south west) rectangle ++(\paperwidth,2cm);
+        \node[anchor=south, align=center] at ([yshift=0.8cm]current page.south) {\color{\exbook@pad@text}\fontsize{16pt}{0}{\ExBook@value@Creator}};
+        \node[anchor=south, align=center] at ([yshift=0.2cm]current page.south) {\color{\exbook@pad@text}\fontsize{12pt}{0}{\ExBook@value@UpdateTime}};
+
+        \node[anchor=south, align=center] at ([yshift=2.4cm]current page.south) {\color{\exbook@pad@text}\fontsize{12pt}{0}{\ExBook@value@motto}};
+
+        \fill[fill=\exbook@pad@second, exbook@pad@dim, rounded corners=12pt] ([#3]current page.south west) rectangle ++(3.5cm,1.5cm);
+        \node[anchor=south, align=center] at ([#4]current page.south west) {\color{\exbook@pad@text}\fontsize{16pt}{0}\textbf{#5}};
+
+        \if@online
+            #6%
+        \fi
+    \end{tikzpicture}
+\end{titlepage}%
+}
+
+% 页眉横条文字
+\newcommand{\myrecttext}{\fontsize{14}{0} \textbf{\ExBook@value@LheadC \ExBook@value@Chead \ExBook@value@Rhead}}
+\newcommand{\myrecttexttwo}{\fontsize{8pt}{0}{\textbf{  \kaishu  \truncate{4cm}{\leftmark}}}}
+\newcommand{\myrecttextthree}{\fontsize{8pt}{0}{\textbf{ \kaishu \truncate{4cm}{\rightmark}}}}
+
+% 页眉横条（含页码）
+\newcommand{\exbook@padheader}{%
+\begin{tikzpicture}[remember picture,overlay]
+    \fill[fill=themeColor, exbook@pad@dim] (current page.north west) rectangle ++(0.668\paperwidth,-0.8cm);
+    \node[anchor=north west, text width=\paperwidth, text height=0.4cm, align=left] at ([xshift=0.0em]current page.north west) {%
+    \textcolor{white}{\myrecttext}
+    };
+
+    \fill[fill=\exbook@pad@second, exbook@pad@dim] ([xshift=-0.332\paperwidth]current page.north east) rectangle ++(\exbook@pad@secondwd\paperwidth,-0.8cm);
+    \node[anchor=north west, text width=\paperwidth, text height=0.16cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
+    \textcolor{\exbook@pad@text}{\myrecttexttwo}
+    };
+    \node[anchor=north west, text width=\paperwidth, text height=0.52cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
+    \textcolor{\exbook@pad@text}{\myrecttextthree}
+    };
+
+    \fill[fill=themeColor, exbook@pad@dim] ([xshift=-0.115\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
+    \fill[fill=themeColor!60, exbook@pad@dim] ([xshift=-0.075\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
+    \fill[fill=themeColor!20, exbook@pad@dim] ([xshift=-0.024\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
+
+    \draw[line width=1.5pt, color=themeColor] (current page.north west) ++(0,-0.8cm) -- ++(\paperwidth,0);
+
+    \node[anchor=east, text height=1.2cm, font=\small] at ([xshift=-8.5cm, yshift=1.5cm]current page.south east) {\color{\exbook@pad@text}  第 \thepage 页  / 共 \pageref{LastPage} 页};
+\end{tikzpicture}%
+}
+
+
+% ---------- 各版式的执行部分 ----------
+% 每个版式一个 \exbook@setup@<版式名> 宏，类末尾按名字派发；
+% 新增版式 = 新增一个 setup 宏并在文件开头声明同名选项。
+
+% A4 系（紧凑/标准/宽松/单题）共用
+\newcommand{\exbook@setup@afour}{%
+    \exbook@afour@geometry
+    \exbook@afour@headfoot
+}
+
+% Pad 系（横版/竖版）共用
+\newcommand{\exbook@setup@pad}{%
     \if@darkmode
-        \tikzset{exbook@pad@dim/.style={opacity=0.382}}% 深色下色块整体减淡
-        \def\exbook@pad@second{themeColor!61.8}% 次要色块颜色
-        \def\exbook@pad@secondwd{0.217}% 页眉次要色块宽度（\paperwidth 的倍数）
-        \def\exbook@pad@text{white!61.8}% 强调文字颜色
         \pagecolor{bg}% 页面背景颜色
         \color{white}% 全局文字颜色
-    \else
-        \tikzset{exbook@pad@dim/.style={}}
-        \def\exbook@pad@second{themeColor!6.2}
-        \def\exbook@pad@secondwd{0.23}
-        \def\exbook@pad@text{themeColor}
     \fi
-
-    % Pad 版封面：#1 封面图位置 #2 副标题纵向偏移 #3 标识底框位置
-    %             #4 标识文字位置 #5 版式标识 #6 在线勘误区块
-    \newcommand{\exbook@padcover}[6]{%
-    \begin{titlepage}
-        \begin{tikzpicture}[remember picture, overlay]
-            \node[anchor=north, inner sep=0pt](image) at ([#1]current page.north west) {\includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{\ExBook@value@coverImg}};
-
-            \fill[fill=\exbook@pad@second, exbook@pad@dim] ([yshift=0cm]current page.west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=1cm, xshift=1cm]current page.west) {\color{\exbook@pad@text} \fontsize{24pt}{0}{\textbf{\ExBook@value@PreTitle}}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=-1cm, xshift=1cm]current page.west) {\fontsize{32pt}{0}{\textbf{\kaishu \ExBook@value@Title}}};
-            \node[anchor=west, align=left, text width=\textwidth, inner sep=0] at ([yshift=#2, xshift=1cm]current page.west) {\fontsize{28pt}{0}{\textbf{\ExBook@value@TitleDescription}}};
-            \fill[fill=\exbook@pad@second, exbook@pad@dim] (current page.south west) rectangle ++(\paperwidth,2cm);
-            \node[anchor=south, align=center] at ([yshift=0.8cm]current page.south) {\color{\exbook@pad@text}\fontsize{16pt}{0}{\ExBook@value@Creator}};
-            \node[anchor=south, align=center] at ([yshift=0.2cm]current page.south) {\color{\exbook@pad@text}\fontsize{12pt}{0}{\ExBook@value@UpdateTime}};
-
-            \node[anchor=south, align=center] at ([yshift=2.4cm]current page.south) {\color{\exbook@pad@text}\fontsize{12pt}{0}{\ExBook@value@motto}};
-
-            \fill[fill=\exbook@pad@second, exbook@pad@dim, rounded corners=12pt] ([#3]current page.south west) rectangle ++(3.5cm,1.5cm);
-            \node[anchor=south, align=center] at ([#4]current page.south west) {\color{\exbook@pad@text}\fontsize{16pt}{0}\textbf{#5}};
-
-            \if@online
-                #6%
-            \fi
-        \end{tikzpicture}
-    \end{titlepage}%
-    }
-
-    % 页眉横条文字
-    \newcommand{\myrecttext}{\fontsize{14}{0} \textbf{\ExBook@value@LheadC \ExBook@value@Chead \ExBook@value@Rhead}}
-    \newcommand{\myrecttexttwo}{\fontsize{8pt}{0}{\textbf{  \kaishu  \truncate{4cm}{\leftmark}}}}
-    \newcommand{\myrecttextthree}{\fontsize{8pt}{0}{\textbf{ \kaishu \truncate{4cm}{\rightmark}}}}
-
-    % 页眉横条（含页码）
-    \newcommand{\exbook@padheader}{%
-    \begin{tikzpicture}[remember picture,overlay]
-        \fill[fill=themeColor, exbook@pad@dim] (current page.north west) rectangle ++(0.668\paperwidth,-0.8cm);
-        \node[anchor=north west, text width=\paperwidth, text height=0.4cm, align=left] at ([xshift=0.0em]current page.north west) {%
-        \textcolor{white}{\myrecttext}
-        };
-
-        \fill[fill=\exbook@pad@second, exbook@pad@dim] ([xshift=-0.332\paperwidth]current page.north east) rectangle ++(\exbook@pad@secondwd\paperwidth,-0.8cm);
-        \node[anchor=north west, text width=\paperwidth, text height=0.16cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
-        \textcolor{\exbook@pad@text}{\myrecttexttwo}
-        };
-        \node[anchor=north west, text width=\paperwidth, text height=0.52cm, align=left, font=\bfseries] at ([xshift=0.66\paperwidth]current page.north west) {%
-        \textcolor{\exbook@pad@text}{\myrecttextthree}
-        };
-
-        \fill[fill=themeColor, exbook@pad@dim] ([xshift=-0.115\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \fill[fill=themeColor!60, exbook@pad@dim] ([xshift=-0.075\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-        \fill[fill=themeColor!20, exbook@pad@dim] ([xshift=-0.024\paperwidth]current page.north east) rectangle ++(0.027\paperwidth,-0.8cm);
-
-        \draw[line width=1.5pt, color=themeColor] (current page.north west) ++(0,-0.8cm) -- ++(\paperwidth,0);
-
-        \node[anchor=east, text height=1.2cm, font=\small] at ([xshift=-8.5cm, yshift=1.5cm]current page.south east) {\color{\exbook@pad@text}  第 \thepage 页  / 共 \pageref{LastPage} 页};
-    \end{tikzpicture}%
-    }
-
     \pagestyle{fancy}
-    \fancyhf{} % 清空当前设置
-    \renewcommand{\headrulewidth}{0pt} % 移除页眉底部的横线
+    \fancyhf{}
+    \renewcommand{\headrulewidth}{0pt}% 移除页眉底部的横线
     \renewcommand{\footrulewidth}{0pt}
     \exbook@setsectionmarks
     \chead{\exbook@padheader}
-
-    % 创建单个题目环境
     \newenvironment{bbox}
     {
         \begingroup
@@ -478,95 +483,101 @@
         \exbook@watermark{0.08}
         \newpage % 在环境结束时插入新页面
     }
+}
 
-    % 两种 Pad 版式只差纸张尺寸与封面上的少量坐标
-    \ifnum\myPageFormat=2
-        % 横版 Pad
-        \geometry{paperheight=150mm, paperwidth=200mm,left=12mm,right=12mm,top=10mm,bottom=15mm}
-        \renewcommand{\maketitle}{%
-            \exbook@padcover{xshift=10cm, yshift=5cm}{-2.5cm}%
-                {yshift=2.5cm, xshift=15.5cm}{yshift=2.8cm, xshift=17.3cm}%
-                {\ExBook@value@TypeThree}{%
-                \node[anchor=south, align=center] at ([yshift=1.0cm, xshift=3.25cm]current page.south west) {\color{\exbook@pad@text}\fontsize{10pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
-                \node[anchor=south, align=center] at ([yshift=0.35cm, xshift=3.4cm]current page.south west) {\color{\exbook@pad@text}\fontsize{10pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
-                }%
-        }
-    \else
-        % 竖版 Pad
-        \geometry{paperheight=250mm, paperwidth=200mm,left=12mm,right=12mm,top=10mm,bottom=15mm}
-        \renewcommand{\maketitle}{%
-            \exbook@padcover{xshift=10cm, yshift=0cm}{-2.8cm}%
-                {yshift=3.5cm, xshift=15.0cm}{yshift=3.8cm, xshift=16.8cm}%
-                {\ExBook@value@TypeSix}{%
-                \node[anchor=south, align=center] at ([yshift=5.5cm, xshift=3.8cm]current page.south west) {\color{\exbook@pad@text}\fontsize{14pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
-                \fill[fill=\exbook@pad@second, exbook@pad@dim, rounded corners=6pt] ([yshift=4.5cm, xshift=0.80cm]current page.south west) rectangle ++(7cm,1cm);
-                \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=4.5cm]current page.south west) {\color{\exbook@pad@text}\fontsize{16pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
-                }%
-        }
-    \fi
+% A4紧凑版：题目间无空隙
+\newcommand{\exbook@setup@compact}{%
+    \exbook@setup@afour
+    \renewcommand{\maketitle}{\exbook@afour@cover{\ExBook@value@TypeOne}{2.5cm}{22pt}\exbook@printblankpage}
+    \newenvironment{bbox}
+    {
 
-\else
-%                         *****************
-%                         **    A4 版     **
-%                         *****************
-    \exbook@afour@geometry
-    \exbook@afour@headfoot
+    }
+    {
+    \exbook@watermark{0.01}
+    }
+}
 
-    % 四种 A4 版式只差封面参数与题目盒子（bbox）的分页/留白策略
-    \ifcase\myPageFormat
-        % 0: A4紧凑版，题目间无空隙
-        \renewcommand{\maketitle}{\exbook@afour@cover{\ExBook@value@TypeOne}{2.5cm}{22pt}\exbook@printblankpage}
-        \newenvironment{bbox}
-        {
+% A4标准版：题目不跨页，题目后留 2.5cm
+\newcommand{\exbook@setup@standard}{%
+    \exbook@setup@afour
+    \renewcommand{\maketitle}{\exbook@afour@cover{\ExBook@value@TypeTwo}{3cm}{24pt}\exbook@printblankpage}
+    \newenvironment{bbox}
+    {
+    \begin{minipage}{\textwidth}
+    }
+    {
 
-        }
-        {
-        \exbook@watermark{0.01}
-        }
-    \or
-        % 1: A4标准版，题目不跨页，题目后留 2.5cm
-        \renewcommand{\maketitle}{\exbook@afour@cover{\ExBook@value@TypeTwo}{3cm}{24pt}\exbook@printblankpage}
-        \newenvironment{bbox}
-        {
+    \vspace*{2.5cm}
+    \end{minipage}
+
+    \exbook@watermark{0.02}
+    }
+}
+
+% A4宽松版：题目不跨页，题目后留 7.5cm
+\newcommand{\exbook@setup@loose}{%
+    \exbook@setup@afour
+    \renewcommand{\maketitle}{\exbook@afour@cover{\ExBook@value@TypeFour}{3cm}{24pt}}
+    \newenvironment{bbox}
+    {
+        \begingroup
         \begin{minipage}{\textwidth}
-        }
-        {
-
-        \vspace*{2.5cm}
+    }
+    {
+        \vspace*{7.5cm}
         \end{minipage}
-
         \exbook@watermark{0.02}
-        }
-    \or
-        % 2: 横版Pad（已在上方 Pad 分支处理）
-    \or
-        % 3: A4宽松版，题目不跨页，题目后留 7.5cm
-        \renewcommand{\maketitle}{\exbook@afour@cover{\ExBook@value@TypeFour}{3cm}{24pt}}
-        \newenvironment{bbox}
-        {
-            \begingroup
-            \begin{minipage}{\textwidth}
-        }
-        {
-            \vspace*{7.5cm}
-            \end{minipage}
-            \exbook@watermark{0.02}
-            \endgroup
-        }
-    \or
-        % 4: A4单题版，一页一题
-        \renewcommand{\maketitle}{\exbook@afour@cover{\ExBook@value@TypeFive}{3cm}{24pt}}
-        \newenvironment{bbox}
-        {
-            \begingroup
-        }
-        {
-            \exbook@watermark{0.02}
-            \endgroup
-            \newpage % 在环境结束时插入新页面
-        }
-    \fi
-\fi
+        \endgroup
+    }
+}
+
+% A4单题版：一页一题
+\newcommand{\exbook@setup@single}{%
+    \exbook@setup@afour
+    \renewcommand{\maketitle}{\exbook@afour@cover{\ExBook@value@TypeFive}{3cm}{24pt}}
+    \newenvironment{bbox}
+    {
+        \begingroup
+    }
+    {
+        \exbook@watermark{0.02}
+        \endgroup
+        \newpage % 在环境结束时插入新页面
+    }
+}
+
+% 横版Pad
+\newcommand{\exbook@setup@padl}{%
+    \exbook@setup@pad
+    \geometry{paperheight=150mm, paperwidth=200mm,left=12mm,right=12mm,top=10mm,bottom=15mm}
+    \renewcommand{\maketitle}{%
+        \exbook@padcover{xshift=10cm, yshift=5cm}{-2.5cm}%
+            {yshift=2.5cm, xshift=15.5cm}{yshift=2.8cm, xshift=17.3cm}%
+            {\ExBook@value@TypeThree}{%
+            \node[anchor=south, align=center] at ([yshift=1.0cm, xshift=3.25cm]current page.south west) {\color{\exbook@pad@text}\fontsize{10pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
+            \node[anchor=south, align=center] at ([yshift=0.35cm, xshift=3.4cm]current page.south west) {\color{\exbook@pad@text}\fontsize{10pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
+            }%
+    }
+}
+
+% 竖版Pad
+\newcommand{\exbook@setup@padp}{%
+    \exbook@setup@pad
+    \geometry{paperheight=250mm, paperwidth=200mm,left=12mm,right=12mm,top=10mm,bottom=15mm}
+    \renewcommand{\maketitle}{%
+        \exbook@padcover{xshift=10cm, yshift=0cm}{-2.8cm}%
+            {yshift=3.5cm, xshift=15.0cm}{yshift=3.8cm, xshift=16.8cm}%
+            {\ExBook@value@TypeSix}{%
+            \node[anchor=south, align=center] at ([yshift=5.5cm, xshift=3.8cm]current page.south west) {\color{\exbook@pad@text}\fontsize{14pt}{0}\textbf{\kaishu 遇到录入错误，可查看：}};
+            \fill[fill=\exbook@pad@second, exbook@pad@dim, rounded corners=6pt] ([yshift=4.5cm, xshift=0.80cm]current page.south west) rectangle ++(7cm,1cm);
+            \node[anchor=south, align=center] at ([yshift=4.5cm, xshift=4.5cm]current page.south west) {\color{\exbook@pad@text}\fontsize{16pt}{0}\textbf{\href{\ExBook@value@onlineCheckUrl}{在线勘误文档（\underline{点击跳转}）}}};
+            }%
+    }
+}
+
+% 按版式名派发
+\csname exbook@setup@\exbook@format\endcsname
 
 %                         *****************
 %                         **   题目相关   **
@@ -711,105 +722,81 @@
 %                         *************************
 %                         **   章节标题与目录显示   **
 %                         *************************
+
+% 有无章节编号（notocnum 选项）只差“编号”部分，差异集中在以下几个宏
 \if@notocnum
-    % 不显示目录编号
-    \titlecontents{section}[0em]
-    {\heiti}
-    {}
-    {}
-    {\titlerule*[0.4pc]{.}\contentspage}
+    \def\exbook@toc@seclabel{}
+    \def\exbook@toc@sublabel{}
+    \def\exbook@sec@size{\fontsize{13pt}{0}}
+    \def\exbook@sec@label{}
+    \def\exbook@sec@sep{0em}
+    \def\exbook@subsec@label{}
+    \def\exbook@subsec@sep{0em}
+\else
+    \def\exbook@toc@seclabel{第\thecontentslabel\ 章\hspace{1em}}
+    \def\exbook@toc@sublabel{\thecontentslabel \hspace{1em}}
+    \def\exbook@sec@size{\normalsize}
+    \def\exbook@sec@label{第\thesection 章}
+    \def\exbook@sec@sep{1em}
+    \def\exbook@subsec@label{\thesubsection}
+    \def\exbook@subsec@sep{0.6em}
+\fi
 
-    \titlecontents{subsection}[2em]
-    {}
-    {}
-    {}
-    {\titlerule*[0.4pc]{.}\contentspage}
+% 目录条目样式
+\titlecontents{section}[0em]
+{\heiti}
+{\exbook@toc@seclabel}
+{}
+{\titlerule*[0.4pc]{.}\contentspage}
 
-    \titlecontents{subsubsection}[4em]
-    {}
-    {}
-    {}
-    {\titlerule*[0.4pc]{.}\contentspage}
+\titlecontents{subsection}[2em]
+{}
+{\exbook@toc@sublabel}
+{}
+{\titlerule*[0.4pc]{.}\contentspage}
 
-    \titlespacing{\section}
-    {0pt} % 左边距
-    {2pt plus 2pt minus 2pt} % 上边距
-    {4pt plus 2pt minus 2pt} % 下边距
+\titlecontents{subsubsection}[4em]
+{}
+{\exbook@toc@sublabel}
+{}
+{\titlerule*[0.4pc]{.}\contentspage}
 
-    \titlespacing{\subsection}
-    {0pt} % 左边距
-    {2pt plus 2pt minus 2pt} % 上边距
-    {2pt plus 2pt minus 2pt} % 下边距
+% 标题间距
+\titlespacing{\section}
+{0pt} % 左边距
+{2pt plus 2pt minus 2pt} % 上边距
+{4pt plus 2pt minus 2pt} % 下边距
 
+\titlespacing{\subsection}
+{0pt} % 左边距
+{2pt plus 2pt minus 2pt} % 上边距
+{2pt plus 2pt minus 2pt} % 下边距
+
+% 标题样式：每个 section 另起一页、居中
+\titleformat{\section}[block]
+{\newpage \centering\heiti\exbook@sec@size}
+{\exbook@sec@label}
+{\exbook@sec@sep}
+{}
+
+\titleformat{\subsection}
+{\normalfont\normalsize\bfseries}
+{\exbook@subsec@label}
+{\exbook@subsec@sep}
+{}
+
+% 无编号模式下 subsubsection 也做同样处理（有编号模式沿用默认样式）
+\if@notocnum
     \titlespacing{\subsubsection}
-    {0pt} % 左边距
-    {2pt plus 2pt minus 2pt} % 上边距
-    {2pt plus 2pt minus 2pt} % 下边距
+    {0pt}
+    {2pt plus 2pt minus 2pt}
+    {2pt plus 2pt minus 2pt}
 
-    % 自定义 \section 标题样式
-    \titleformat{\section}[block]
-    {\newpage \centering\heiti\fontsize{13pt}{0}}
+    \titleformat{\subsubsection}
+    {\normalfont\normalsize\bfseries}
     {}
     {0em}
-    {} % 居中、字体和大小，每一个section都重启一页
-
-    % 自定义 \subsection 标题样式
-    \titleformat{\subsection}
-    {\normalfont\normalsize\bfseries} % 字体和大小
-    {} % 标题编号
-    {0em} % 与标题编号的间距
-    {} % 标题之后的间距
-
-    % 自定义 \subsubsection 标题样式
-    \titleformat{\subsubsection}
-    {\normalfont\normalsize\bfseries} % 字体和大小
-    {} % 标题编号
-    {0em} % 与标题编号的间距
-    {} % 标题之后的间距
-
-\else
-    % 自定义 \section 标题在目录中的样式
-    \titlecontents{section}[0em]
-    {\heiti}
-    {第\thecontentslabel\ 章\hspace{1em}}
     {}
-    {\titlerule*[0.4pc]{.}\contentspage}
-
-    \titlecontents{subsection}[2em]
-    {}
-    {\thecontentslabel \hspace{1em}}
-    {}
-    {\titlerule*[0.4pc]{.}\contentspage}
-
-    \titlecontents{subsubsection}[4em]
-    {}
-    {\thecontentslabel \hspace{1em}}
-    {}
-    {\titlerule*[0.4pc]{.}\contentspage}
-
-    \titlespacing{\section}
-    {0pt} % 左边距
-    {2pt plus 2pt minus 2pt} % 上边距
-    {4pt plus 2pt minus 2pt} % 下边距
-
-    \titlespacing{\subsection}
-    {0pt} % 左边距
-    {2pt plus 2pt minus 2pt} % 上边距
-    {2pt plus 2pt minus 2pt} % 下边距
-
-    % 自定义 \section 标题样式
-    \titleformat{\section}[block]
-    {\newpage \centering\heiti\normalsize}
-    {第\thesection 章}
-    {1em}
-    {} % 居中、字体和大小，每一个section都重启一页
-
-    % 自定义 \subsection 标题样式
-    \titleformat{\subsection}
-    {\normalfont\normalsize\bfseries} % 字体和大小
-    {\thesubsection} % 标题编号
-    {0.6em} % 与标题编号的间距
-    {} % 标题之后的间距
 \fi
 
 \AtBeginDocument{
