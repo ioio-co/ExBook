@@ -19,5 +19,11 @@ jobs:
             texlive-xetex texlive-lang-chinese texlive-latex-extra \
             texlive-fonts-recommended texlive-fonts-extra tex-gyre
 
+      - name: TeX environment sanity check
+        run: |
+          which xelatex && xelatex --version | head -1
+          kpsewhich ctex.cls || echo "ctex.cls NOT FOUND"
+          kpsewhich fourier.sty || echo "fourier.sty NOT FOUND"
+
       - name: Compile all format/option combinations
         run: tests/compile-matrix.sh

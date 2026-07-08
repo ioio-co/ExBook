@@ -51,8 +51,14 @@ compile_one() { # $1 名称  $2 主文件内容来源(.tex)  $3 版式选项(空
       pdftoppm -r 60 -png "$work/main.pdf" "$OUT/$name" 2>/dev/null
     fi
   else
-    echo "$name: FAILED"
-    tail -25 "$work/c1.log" "$work/c2.log" 2>/dev/null | tail -30
+    echo "$name: FAILED (workdir: $work)"
+    ls -la "$work" || true
+    for f in "$work/c1.log" "$work/c2.log" "$work/main.log" "$work/missfont.log"; do
+      if [ -s "$f" ]; then
+        echo "----- ${f##*/} (tail) -----"
+        tail -50 "$f"
+      fi
+    done
     cp "$work"/c*.log "$REPO/build/" 2>/dev/null
     fail=1
   fi
