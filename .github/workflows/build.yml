@@ -17,13 +17,14 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq --no-install-recommends \
             texlive-xetex texlive-lang-chinese texlive-latex-extra \
-            texlive-fonts-recommended texlive-fonts-extra tex-gyre
+            texlive-fonts-recommended texlive-fonts-extra fonts-texgyre
 
       - name: TeX environment sanity check
         run: |
           which xelatex && xelatex --version | head -1
           kpsewhich ctex.cls || echo "ctex.cls NOT FOUND"
           kpsewhich fourier.sty || echo "fourier.sty NOT FOUND"
+          fc-list | grep -i termes || echo "TeX Gyre Termes NOT in fontconfig"
 
       - name: Compile all format/option combinations
         run: tests/compile-matrix.sh
